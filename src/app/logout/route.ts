@@ -1,20 +1,16 @@
 import { createClient } from '@/utils/supabase/server'
-import { NextResponse } from 'next/server'
-import { NextRequest } from 'next/server'
+import { redirect } from 'next/navigation'
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   const supabase = await createClient()
 
   const { error } = await supabase.auth.signOut()
 
   if (error) {
-    return NextResponse.json(
-      { error: 'Failed to sign out' },
-      { status: 400 }
-    )
+    // If there's an error, redirect to home with error message
+    redirect('/?error=' + encodeURIComponent('Failed to sign out'))
   }
 
-  // Get the origin from the request to build the redirect URL
-  const origin = new URL(request.url).origin
-  return NextResponse.redirect(new URL('/', origin))
+  // Successful logout - redirect to home page
+  redirect('/')
 }
