@@ -69,19 +69,11 @@ export default function Home() {
       }
       setPasswordMatch(true)
 
-      try {
-        await signup(formData)
-      } catch (err) {
-        setError('An error occurred during signup. Please try again.')
-        setIsLoading(false)
-      }
+      // Server action will handle redirect, no need for try/catch
+      await signup(formData)
     } else {
-      try {
-        await login(formData)
-      } catch (err) {
-        setError('An error occurred during signin. Please try again.')
-        setIsLoading(false)
-      }
+      // Server action will handle redirect, no need for try/catch
+      await login(formData)
     }
 
     setIsLoading(false)
