@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import RefreshFeedButton from '@/components/RefreshFeedButton'
 import FeedItem from '@/components/FeedItem'
-import { logout } from '@/app/logout/route'
+import { logout } from '@/app/logout/actions'
 
 export default async function Dashboard() {
   const supabase = await createClient()
