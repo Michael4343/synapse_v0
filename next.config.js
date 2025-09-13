@@ -14,9 +14,10 @@ const nextConfig = {
     optimizePackageImports: ['@supabase/supabase-js', '@supabase/ssr'],
     
     // Production-only optimizations
-    ...(process.env.NODE_ENV === 'production' && {
-      optimizeCss: true,
-    }),
+    // Note: optimizeCss disabled due to missing critters dependency in Vercel
+    // ...(process.env.NODE_ENV === 'production' && {
+    //   optimizeCss: true,
+    // }),
   },
 
   // Turbopack-specific optimizations with WSL improvements
