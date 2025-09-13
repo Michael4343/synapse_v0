@@ -68,6 +68,13 @@ const nextConfig = {
   ...(process.env.NODE_ENV === 'production' && {
     output: 'standalone',
   }),
+
+  // Set environment variables for build process
+  env: {
+    // Provide placeholder values during build if not set
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key',
+  },
 }
 
 module.exports = nextConfig
