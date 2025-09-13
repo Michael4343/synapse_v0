@@ -70,15 +70,16 @@ export default async function Dashboard() {
               {feedItems && feedItems.length > 0 ? (
                 <div className="space-y-8">
                   {Object.entries(groupedItems).map(([itemType, items]) => {
+                    const typedItems = items as any[]
                     const categoryName = itemType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
                     
                     return (
                       <div key={itemType} className="space-y-4">
                         <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">
-                          {categoryName} ({items.length})
+                          {categoryName} ({typedItems.length})
                         </h2>
                         <div className="grid gap-4 md:grid-cols-2">
-                          {items.map((item) => (
+                          {typedItems.map((item) => (
                             <FeedItem key={item.id} item={item} />
                           ))}
                         </div>
