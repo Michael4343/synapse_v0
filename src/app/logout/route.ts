@@ -1,11 +1,12 @@
 import { createClient } from '@/utils/supabase/server'
 import { NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = await createClient()
-  
+
   const { error } = await supabase.auth.signOut()
-  
+
   if (error) {
     return NextResponse.json(
       { error: 'Failed to sign out' },
@@ -13,5 +14,7 @@ export async function POST() {
     )
   }
 
-  return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'))
+  // Get the origin from the request to build the redirect URL
+  const origin = new URL(request.url).origin
+  return NextResponse.redirect(new URL('/', origin))
 }
