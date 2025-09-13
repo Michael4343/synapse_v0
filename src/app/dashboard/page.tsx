@@ -37,7 +37,7 @@ export default async function Dashboard() {
     }
     acc[type].push(item)
     return acc
-  }, {} as Record<string, typeof feedItems>) || {}
+  }, {} as Record<string, any[]>) || {}
 
   return (
     <div className="min-h-screen bg-gray-50">
