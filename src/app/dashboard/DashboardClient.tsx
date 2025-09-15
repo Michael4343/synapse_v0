@@ -242,12 +242,12 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                       </p>
                       {activeSessionId && (
                         <p className="text-xs text-indigo-600 mt-1">
-                          Viewing historical feed
+                          Viewing previous session
                         </p>
                       )}
                     </div>
                     <div className="flex items-center space-x-4">
-                      {/* Keyword Search Button */}
+                      {/* Search Button */}
                       <button
                         onClick={handleKeywordSearchOpen}
                         className="inline-flex items-center px-4 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -255,7 +255,7 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                         <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        Keyword Search
+                        Search
                       </button>
                       {children}
                     </div>
@@ -265,18 +265,14 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                   <div className="mb-8">
                     <div className="flex items-center mb-4">
                       <h2 className="text-xl font-semibold text-gray-900">
-                        {activeSessionId ? 'Historical Feed' : 'Latest Research Feed'}
+                        Research Feed
                       </h2>
-                      <span className="ml-3 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                        {activeSessionId ? 'Archived' : 'Current'}
-                      </span>
+                      {activeSessionId && (
+                        <span className="ml-3 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                          Previous Session
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 mb-6">
-                      {activeSessionId
-                        ? 'Previously generated content from your feed history'
-                        : 'Your most recent feed generation - either from profile refresh or keyword search'
-                      }
-                    </p>
 
                     {isLoadingSession ? (
                       <div className="text-center py-12">
@@ -285,7 +281,7 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                           Loading session content...
                         </h3>
                         <p className="text-gray-500">
-                          Please wait while we retrieve your historical feed
+                          Please wait while we retrieve your previous session
                         </p>
                       </div>
                     ) : sessionLoadError ? (
@@ -342,7 +338,7 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                         </h3>
                         <p className="text-gray-500 mb-4">
                           {activeSessionId
-                            ? 'This historical feed appears to be empty.'
+                            ? 'This session appears to be empty.'
                             : 'Your personalised feed will appear here once generated.'
                           }
                         </p>
@@ -359,7 +355,7 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
         </div>
       </div>
 
-      {/* Keyword Search Modal */}
+      {/* Search Modal */}
       <KeywordSearchModal
         isOpen={showKeywordSearch}
         onClose={() => setShowKeywordSearch(false)}
