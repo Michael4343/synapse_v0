@@ -23,7 +23,8 @@
       "Bash(npm run lint)",
       "Bash(npx tsc:*)",
       "Bash(netstat:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run typecheck:*)"
     ],
     "deny": [],
     "ask": []

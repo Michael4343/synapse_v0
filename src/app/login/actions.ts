@@ -63,6 +63,9 @@ export async function signup(formData: FormData) {
   const { error } = await supabase.auth.signUp({
     email: email.trim().toLowerCase(),
     password: password,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`
+    }
   })
 
   if (error) {
