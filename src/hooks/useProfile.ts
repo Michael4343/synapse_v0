@@ -107,6 +107,8 @@ export function useProfile() {
         throw new Error('Failed to create feed session')
       }
 
+      console.log('Calling generate-feed with sessionId:', sessionData.id)
+
       const response = await supabase.functions.invoke('generate-feed', {
         body: {
           preferences: preferences || undefined,
@@ -180,10 +182,15 @@ export function useProfile() {
         throw new Error('Failed to create keyword search session')
       }
 
-      const response = await supabase.functions.invoke('keyword-search', {
+      console.log('Calling generate-feed with keyword search parameters and sessionId:', sessionData.id)
+
+      // Use unified generate-feed function with keyword-only search
+      const response = await supabase.functions.invoke('generate-feed', {
         body: {
-          keywords,
-          sessionId: sessionData.id
+          preferences: { keywords },
+          sessionId: sessionData.id,
+          searchType: 'keyword-search',
+          keywordOnlySearch: true
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,

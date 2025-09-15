@@ -46,7 +46,14 @@ export default function FeedSidebar({
         return
       }
 
+      console.log('Loaded feed sessions:', sessions)
       setSessions(sessions || [])
+
+      // Auto-select the latest session if no session is currently active
+      if (sessions && sessions.length > 0 && activeSessionId === null) {
+        const latestSession = sessions[0] // Sessions are ordered by created_at desc
+        onSessionChange(latestSession.id)
+      }
     } catch (err) {
       console.error('Failed to load sessions:', err)
     } finally {
@@ -85,9 +92,9 @@ export default function FeedSidebar({
     }
   }
 
-  const handleCurrentFeedClick = () => {
-    onSessionChange(null)
-    tracking.trackEvent('current_feed_selected')
+  const handleFavouritesClick = () => {
+    // TODO: Implement favourites functionality
+    tracking.trackEvent('favourites_clicked')
   }
 
   const handleToggleCollapse = () => {
@@ -108,11 +115,9 @@ export default function FeedSidebar({
           </svg>
         </button>
 
-        {/* Indicator for active session */}
+        {/* Favourites indicator */}
         <div className="px-2 py-1">
-          <div className={`w-2 h-2 rounded-full ${
-            activeSessionId === null ? 'bg-indigo-600' : 'bg-gray-300'
-          }`} title="Current feed"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-400" title="Favourites"></div>
         </div>
 
         {sessions.slice(0, 5).map((session) => (
@@ -144,35 +149,24 @@ export default function FeedSidebar({
         </div>
       </div>
 
-      {/* Current Feed */}
+      {/* Favourites */}
       <div
-        onClick={handleCurrentFeedClick}
-        className={`p-4 border-b border-gray-200 cursor-pointer transition-colors ${
-          activeSessionId === null
-            ? 'bg-indigo-50 border-indigo-200'
-            : 'bg-white hover:bg-gray-50'
-        }`}
+        onClick={handleFavouritesClick}
+        className="p-4 border-b border-gray-200 cursor-pointer transition-colors bg-white hover:bg-gray-50"
       >
         <div className="flex items-center space-x-3">
-          <div className={`flex-shrink-0 ${
-            activeSessionId === null ? 'text-indigo-600' : 'text-gray-400'
-          }`}>
+          <div className="flex-shrink-0 text-yellow-500">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
             </svg>
           </div>
           <div>
-            <h3 className={`text-sm font-medium ${
-              activeSessionId === null ? 'text-indigo-900' : 'text-gray-900'
-            }`}>
-              Current Feed
+            <h3 className="text-sm font-medium text-gray-900">
+              Favourites
             </h3>
-            <p className="text-xs text-gray-500">Latest generated content</p>
+            <p className="text-xs text-gray-500">Coming soon</p>
           </div>
         </div>
-        {activeSessionId === null && (
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600"></div>
-        )}
       </div>
 
       {/* Session List */}

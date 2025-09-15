@@ -24,11 +24,12 @@ export default async function Dashboard() {
     redirect('/onboarding')
   }
 
-  // Fetch user's feed items
+  // Fetch user's current feed items (not associated with any session)
   const { data: feedItems } = await supabase
     .from('feed_items')
     .select('*')
     .eq('user_id', user.id)
+    .is('session_id', null)
     .order('created_at', { ascending: false })
 
   // Group items by type

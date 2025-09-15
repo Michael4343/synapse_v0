@@ -152,6 +152,11 @@ vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 
+# Edge Functions configuration
+[functions]
+# Global timeout for edge functions in seconds (default: 60, max: 300)
+timeout = 300
+
 # Experimental features may be deprecated any time
 [experimental]
 # Configures Postgres CDC via logical replication.

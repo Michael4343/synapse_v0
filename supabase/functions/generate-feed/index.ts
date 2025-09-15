@@ -20,16 +20,22 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request body for preferences and session ID
+    // Parse request body for preferences, session ID, and search type
     let preferences = null
     let sessionId = null
+    let searchType = 'profile-based' // default to profile-based search
+    let keywordOnlySearch = false
     if (req.method === 'POST') {
       try {
         const body = await req.json()
         preferences = body.preferences
         sessionId = body.sessionId
+        searchType = body.searchType || 'profile-based'
+        keywordOnlySearch = body.keywordOnlySearch || false
         console.log('Received preferences:', preferences)
         console.log('Received sessionId:', sessionId)
+        console.log('Search type:', searchType)
+        console.log('Keyword only search:', keywordOnlySearch)
       } catch (err) {
         console.log('No preferences in request body or parsing failed')
       }
@@ -150,18 +156,28 @@ serve(async (req) => {
       searchKeywords.push(preferences.keywords.trim())
     }
 
-    // Extract research areas from profile for additional context
-    const profileKeywords = profileText.match(/(?:research|field|area|focus|interest):\s*([^\n,]+)/gi)
-    if (profileKeywords) {
-      profileKeywords.forEach(match => {
-        const keyword = match.replace(/(?:research|field|area|focus|interest):\s*/gi, '').trim()
-        if (keyword) searchKeywords.push(keyword)
-      })
-    }
+    // For keyword-only search, don't extract from profile
+    let keywordContext = ''
+    if (keywordOnlySearch) {
+      // Pure keyword search - use only provided keywords
+      if (searchKeywords.length === 0) {
+        throw new Error('Keywords are required for keyword-only search')
+      }
+      keywordContext = `\n\nKEYWORD SEARCH FOCUS: ${searchKeywords.join(', ')}`
+    } else {
+      // Profile-based search - extract research areas from profile for additional context
+      const profileKeywords = profileText.match(/(?:research|field|area|focus|interest):\s*([^\n,]+)/gi)
+      if (profileKeywords) {
+        profileKeywords.forEach(match => {
+          const keyword = match.replace(/(?:research|field|area|focus|interest):\s*/gi, '').trim()
+          if (keyword) searchKeywords.push(keyword)
+        })
+      }
 
-    const keywordContext = searchKeywords.length > 0
-      ? `\n\nADDITIONAL SEARCH KEYWORDS: ${searchKeywords.join(', ')}`
-      : ''
+      keywordContext = searchKeywords.length > 0
+        ? `\n\nADDITIONAL SEARCH KEYWORDS: ${searchKeywords.join(', ')}`
+        : ''
+    }
 
     // Determine which categories to include based on preferences
     const defaultCategories = {
@@ -230,7 +246,28 @@ serve(async (req) => {
     }
 
     // Prepare the prompt for enabled categories only
-    const prompt = `Find recent research content for this researcher. Return 3-4 items per category.
+    let prompt
+    if (keywordOnlySearch) {
+      // Pure keyword search prompt - no profile bias
+      prompt = `Find recent research content related to these keywords: "${searchKeywords.join(', ')}"
+
+TODAY'S DATE: ${todayString}
+
+IMPORTANT: This is a pure keyword search. Do NOT consider any researcher profile or existing expertise. Focus ONLY on the provided keywords.
+
+SEARCH FOCUS: ${searchKeywords.join(', ')}
+
+FIND recent content (past 6 months) in these categories:
+${categoryInstructions.join('\n')}
+
+Return ONLY this JSON structure:
+${JSON.stringify(jsonStructure, null, 2)}
+
+Return 3-4 items per category. Focus on recent, relevant content related to "${searchKeywords.join(', ')}".
+Do not include any explanatory text, reasoning, or other content outside of this JSON object.`
+    } else {
+      // Profile-based search prompt
+      prompt = `Find recent research content for this researcher. Return 3-4 items per category.
 
 TODAY'S DATE: ${todayString}
 
@@ -245,6 +282,7 @@ Return ONLY this JSON structure:
 ${JSON.stringify(jsonStructure, null, 2)}
 
 Do not include any explanatory text, reasoning, or other content outside of this JSON object.`
+    }
 
     // Call Perplexity API with structured output
     console.log('Calling Perplexity API...')
@@ -427,12 +465,29 @@ Do not include any explanatory text, reasoning, or other content outside of this
 
     // Insert new feed items
     if (feedItems.length > 0) {
-      const { error: insertError } = await supabaseClient
+      // First, insert items for the session (history)
+      const { error: sessionInsertError } = await supabaseClient
         .from('feed_items')
         .insert(feedItems)
 
-      if (insertError) {
-        throw new Error('Failed to insert feed items')
+      if (sessionInsertError) {
+        throw new Error('Failed to insert session feed items')
+      }
+
+      // For keyword search, also create main feed items (without session_id)
+      if (keywordOnlySearch) {
+        const mainFeedItems = feedItems.map(item => ({
+          ...item,
+          session_id: null // Remove session_id to make these the main feed items
+        }))
+
+        const { error: mainFeedInsertError } = await supabaseClient
+          .from('feed_items')
+          .insert(mainFeedItems)
+
+        if (mainFeedInsertError) {
+          throw new Error('Failed to insert main feed items')
+        }
       }
     }
 

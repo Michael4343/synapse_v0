@@ -463,4 +463,65 @@ Successfully implemented comprehensive sidebar with historical feed management, 
 
 ---
 
-*Always update CLAUDE.md at the end of each step with new directory structure and create documentation in `/docs/` for detailed changes.*
+## 🔧 Unified Keyword Search System - September 16, 2025
+
+### Major Feed Generation Architecture Improvement
+Successfully unified keyword search and profile-based feed generation into a single, cohesive system that properly replaces the current feed instead of adding separate search results.
+
+#### Problems Solved:
+- ❌ **Separate search results display** - Keyword search showed results in separate section below main feed
+- ❌ **No feed replacement** - Previous feed remained while search results were appended
+- ❌ **Duplicate edge functions** - Separate `keyword-search` and `generate-feed` functions
+- ❌ **No session integration** - Keyword search didn't integrate with feed history system
+
+#### Solution Implemented:
+- ✅ **Unified edge function** - Single `generate-feed` function handles both profile-based and keyword-only searches
+- ✅ **Proper feed replacement** - Keyword search now creates new current feed that replaces existing one
+- ✅ **Session integration** - All searches (keyword and profile) create proper session records in history
+- ✅ **Clean UI flow** - Keyword search triggers page refresh showing new current feed, no separate sections
+
+#### Technical Implementation:
+
+**1. Enhanced Edge Function (`supabase/functions/generate-feed/index.ts`)**
+- Added `searchType` and `keywordOnlySearch` parameters to handle different search modes
+- Dual prompt system: profile-based vs pure keyword search prompts
+- Unified response format and database insertion logic
+- Maintains all existing functionality while adding keyword-only search capability
+
+**2. Simplified Hook Logic (`src/hooks/useProfile.ts`)**
+- Modified `keywordSearch` to use unified `generate-feed` function
+- Removed dependency on separate `keyword-search` edge function
+- Consistent error handling and session creation across all search types
+
+**3. Clean Dashboard Integration (`src/app/dashboard/DashboardClient.tsx`)**
+- Removed separate search results state and display logic
+- Keyword search now triggers page refresh to show new current feed
+- Eliminated `SearchResultsSection` component dependency
+- Unified feed display logic for all search types
+
+**4. Removed Redundant Components**
+- Deleted `supabase/functions/keyword-search/` edge function
+- Removed `src/components/SearchResultsSection.tsx` component
+- Cleaned up imports and unused state variables
+
+#### User Experience Improvement:
+- **Intuitive Flow**: Keyword search creates new current feed, previous feed saved to history automatically
+- **Consistent Interface**: All feed operations (refresh, keyword search, preferences) work identically
+- **Historical Navigation**: Keyword search sessions appear in sidebar with proper titles
+- **Clean UI**: No more separate search result sections cluttering the interface
+
+#### Files Modified:
+1. **Enhanced**: `supabase/functions/generate-feed/index.ts` - Unified search handling
+2. **Simplified**: `src/hooks/useProfile.ts` - Unified function calls
+3. **Cleaned**: `src/app/dashboard/DashboardClient.tsx` - Removed separate display logic
+4. **Removed**: `supabase/functions/keyword-search/` and `src/components/SearchResultsSection.tsx`
+
+#### Impact Achieved:
+- **Unified Architecture**: Single consistent system for all feed generation types
+- **Better UX**: Keyword search properly replaces feed as users expect
+- **Cleaner Codebase**: Eliminated redundant components and complex state management
+- **Session Integration**: All search operations properly tracked in feed history
+
+---
+
+*Always update CLAUDE.md at the end of each step with new directory structure and create documentation in `/docs/` for detailed changes. DO NOT SETUP A SERVER I HAVE ON RUNNING*
