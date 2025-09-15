@@ -69,6 +69,17 @@ export default function FeedItem({ item }: FeedItemProps) {
     return `${authors.slice(0, 3).join(', ')} et al.`
   }
 
+  const getSourceFromUrl = (url: string | null | undefined) => {
+    if (!url) return 'Unknown Source'
+
+    try {
+      const domain = new URL(url).hostname.replace('www.', '')
+      return domain
+    } catch {
+      return 'Unknown Source'
+    }
+  }
+
 
   const renderMetadata = () => {
     if (!item.metadata) return null
@@ -77,19 +88,21 @@ export default function FeedItem({ item }: FeedItemProps) {
       case 'publication':
         return (
           <div className="text-sm text-gray-500 mt-1">
+            <p>Source: {getSourceFromUrl(item.url)}</p>
             {item.metadata.authors && (
-              <p>Authors: {formatAuthors(item.metadata.authors)}</p>
+              <p className="text-gray-400">By: {formatAuthors(item.metadata.authors)}</p>
             )}
           </div>
         )
       case 'patent':
         return (
           <div className="text-sm text-gray-500 mt-1">
+            <p>Source: {getSourceFromUrl(item.url)}</p>
             {item.metadata.patent_number && (
               <p>Patent No: {item.metadata.patent_number}</p>
             )}
             {item.metadata.inventors && (
-              <p>Inventors: {formatAuthors(item.metadata.inventors)}</p>
+              <p className="text-gray-400">Inventors: {formatAuthors(item.metadata.inventors)}</p>
             )}
           </div>
         )
@@ -107,7 +120,7 @@ export default function FeedItem({ item }: FeedItemProps) {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-4">
                   {item.metadata.issuing_agency && (
-                    <span>Agency: {item.metadata.issuing_agency}</span>
+                    <span>Source: {item.metadata.issuing_agency}</span>
                   )}
                   {item.metadata.deadline && (
                     <span className="text-red-600 font-medium">
