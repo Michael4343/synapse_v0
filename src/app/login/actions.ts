@@ -19,7 +19,7 @@ export async function login(formData: FormData) {
     redirect(`/?error=${encodeURIComponent('Please enter a valid email address')}`)
   }
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: email.trim().toLowerCase(),
     password: password,
   })
@@ -60,7 +60,7 @@ export async function signup(formData: FormData) {
     redirect(`/?error=${encodeURIComponent('Password must be at least 6 characters long')}`)
   }
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: email.trim().toLowerCase(),
     password: password,
     options: {

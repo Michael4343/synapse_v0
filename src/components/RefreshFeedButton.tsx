@@ -3,17 +3,31 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProfile } from '@/hooks/useProfile'
+import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 
 export default function RefreshFeedButton() {
   const { generateFeed, isGeneratingFeed, error } = useProfile()
+  const tracking = usePostHogTracking()
   const [success, setSuccess] = useState(false)
   const router = useRouter()
 
   const handleRefresh = async () => {
     try {
       setSuccess(false)
+      tracking.trackFeedRefreshClicked()
+
+      const startTime = Date.now()
       await generateFeed()
+      const endTime = Date.now()
+
       setSuccess(true)
+
+      // Track feed refresh completion (we'll get more details from the page refresh)
+      tracking.trackFeedRefreshCompleted(
+        0, // We don't have item count here
+        [], // We don't have categories here
+        endTime - startTime
+      )
 
       // Refresh the page to show new items and reset success state
       setTimeout(() => {
@@ -23,6 +37,7 @@ export default function RefreshFeedButton() {
 
     } catch (err) {
       console.error('Failed to refresh feed:', err)
+      tracking.trackError('feed_refresh_failed', err instanceof Error ? err.message : 'Unknown feed refresh error')
     }
   }
 

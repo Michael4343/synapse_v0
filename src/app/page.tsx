@@ -6,9 +6,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { login, signup } from './login/actions'
+import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 
 export default function Home() {
   const router = useRouter()
+  const tracking = usePostHogTracking()
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signup')
   const [isLoading, setIsLoading] = useState(false)
   const [passwordMatch, setPasswordMatch] = useState(true)
@@ -69,11 +71,27 @@ export default function Home() {
       }
       setPasswordMatch(true)
 
-      // Server action will handle redirect, no need for try/catch
-      await signup(formData)
+      // Track signup attempt
+      tracking.trackUserSignup('email')
+
+      try {
+        // Server action will handle redirect, no need for try/catch
+        await signup(formData)
+        // Track success (will happen on redirect to dashboard)
+      } catch (error) {
+        tracking.trackError('signup_failed', error instanceof Error ? error.message : 'Unknown signup error')
+      }
     } else {
-      // Server action will handle redirect, no need for try/catch
-      await login(formData)
+      // Track login attempt
+      tracking.trackUserLogin('email')
+
+      try {
+        // Server action will handle redirect, no need for try/catch
+        await login(formData)
+        // Track success (will happen on redirect to dashboard)
+      } catch (error) {
+        tracking.trackError('login_failed', error instanceof Error ? error.message : 'Unknown login error')
+      }
     }
 
     setIsLoading(false)

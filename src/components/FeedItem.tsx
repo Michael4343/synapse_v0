@@ -1,10 +1,15 @@
+'use client'
+
 import { FeedItem as FeedItemType } from '@/types/database'
+import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 
 interface FeedItemProps {
   item: FeedItemType
 }
 
 export default function FeedItem({ item }: FeedItemProps) {
+  const tracking = usePostHogTracking()
+
   // Filter out funding opportunities with past deadlines
   if (item.item_type === 'funding_opportunity' && item.metadata?.deadline) {
     const deadlineDate = new Date(item.metadata.deadline)
@@ -12,6 +17,15 @@ export default function FeedItem({ item }: FeedItemProps) {
     if (deadlineDate <= today) {
       return null // Don't render expired funding opportunities
     }
+  }
+
+  const handleItemClick = () => {
+    tracking.trackFeedItemClicked(
+      item.id,
+      item.item_type,
+      item.title,
+      getSourceFromUrl(item.url)
+    )
   }
   const getBadgeColor = (itemType: string) => {
     switch (itemType) {
@@ -186,6 +200,7 @@ export default function FeedItem({ item }: FeedItemProps) {
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={handleItemClick}
                 className="inline-flex items-center text-indigo-600 hover:text-indigo-500 text-sm font-medium"
               >
                 Read more

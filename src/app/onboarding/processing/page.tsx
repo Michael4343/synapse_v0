@@ -5,13 +5,16 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProfile } from '@/hooks/useProfile'
+import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 
 export default function ProcessingPage() {
   const { generateProfile, generateFeed, isGeneratingProfile, isGeneratingFeed, error } = useProfile()
+  const tracking = usePostHogTracking()
   const [step, setStep] = useState<'profile' | 'feed' | 'complete'>('profile')
   const [profileGenerated, setProfileGenerated] = useState(false)
   const router = useRouter()
   const hasStarted = useRef(false)
+  const startTime = useRef<number>(Date.now())
 
   useEffect(() => {
     // Prevent multiple executions
@@ -28,20 +31,40 @@ export default function ProcessingPage() {
         // Step 1: Generate profile
         console.log('Step 1: Starting profile generation')
         setStep('profile')
+        const profileStartTime = Date.now()
         await generateProfile()
+        const profileEndTime = Date.now()
         setProfileGenerated(true)
         console.log('Step 1: Profile generation completed')
-        
+
+        // Track profile generation completion
+        tracking.trackProfileGenerationCompleted(
+          profileEndTime - profileStartTime,
+          0 // We don't have profile length easily accessible here
+        )
+
         // Step 2: Generate feed (start immediately, no artificial delay)
         console.log('Step 2: Starting feed generation')
         setStep('feed')
+        const feedStartTime = Date.now()
         await generateFeed()
+        const feedEndTime = Date.now()
         console.log('Step 2: Feed generation completed')
-        
+
+        // Track feed generation completion
+        tracking.trackFeedRefreshCompleted(
+          0, // We don't have item count here
+          [], // We don't have categories here
+          feedEndTime - feedStartTime
+        )
+
         // Complete
         setStep('complete')
         console.log('Processing completed successfully')
-        
+
+        // Track onboarding completion
+        tracking.trackOnboardingCompleted()
+
         // Redirect to dashboard after a brief moment
         setTimeout(() => {
           router.push('/dashboard?message=Profile and feed generated successfully')
@@ -49,6 +72,7 @@ export default function ProcessingPage() {
         
       } catch (err) {
         console.error('Processing failed:', err)
+        tracking.trackError('onboarding_processing_failed', err instanceof Error ? err.message : 'Unknown processing error')
         hasStarted.current = false // Reset on error to allow retry
       }
     }

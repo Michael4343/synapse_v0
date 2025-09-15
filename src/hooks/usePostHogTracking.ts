@@ -1,0 +1,186 @@
+'use client'
+
+import { useEffect } from 'react'
+import { usePostHog } from '@/providers/PostHogProvider'
+import { usePathname } from 'next/navigation'
+
+export function usePostHogTracking() {
+  const posthog = usePostHog()
+  const pathname = usePathname()
+
+  // Track pageviews
+  useEffect(() => {
+    if (pathname && posthog) {
+      posthog.capture('$pageview', {
+        $current_url: window.location.href,
+        page_type: getPageType(pathname),
+      })
+    }
+  }, [pathname, posthog])
+
+  // Authentication tracking
+  const trackUserSignup = (method: 'email' | 'google' = 'email') => {
+    posthog?.capture('user_signup_attempted', {
+      signup_method: method,
+      page_url: window.location.href,
+    })
+  }
+
+  const trackUserSignupSuccess = (userId: string, method: 'email' | 'google' = 'email') => {
+    posthog?.identify(userId)
+    posthog?.capture('user_signup_completed', {
+      signup_method: method,
+      user_id: userId,
+    })
+  }
+
+  const trackUserLogin = (method: 'email' | 'google' = 'email') => {
+    posthog?.capture('user_login_attempted', {
+      login_method: method,
+      page_url: window.location.href,
+    })
+  }
+
+  const trackUserLoginSuccess = (userId: string, method: 'email' | 'google' = 'email') => {
+    posthog?.identify(userId)
+    posthog?.capture('user_login_completed', {
+      login_method: method,
+      user_id: userId,
+    })
+  }
+
+  const trackUserLogout = () => {
+    posthog?.capture('user_logout_completed')
+    posthog?.reset()
+  }
+
+  // Onboarding tracking
+  const trackOnboardingStarted = () => {
+    posthog?.capture('onboarding_started')
+  }
+
+  const trackUrlSubmitted = (url: string, urlType: string) => {
+    posthog?.capture('onboarding_url_submitted', {
+      submitted_url: url,
+      url_type: urlType,
+      url_domain: new URL(url).hostname,
+    })
+  }
+
+  const trackProfileGenerationStarted = () => {
+    posthog?.capture('profile_generation_started')
+  }
+
+  const trackProfileGenerationCompleted = (durationMs: number, profileLength: number) => {
+    posthog?.capture('profile_generation_completed', {
+      generation_duration_ms: durationMs,
+      profile_text_length: profileLength,
+    })
+  }
+
+  const trackOnboardingCompleted = () => {
+    posthog?.capture('onboarding_completed')
+  }
+
+  // Dashboard tracking
+  const trackFeedRefreshClicked = () => {
+    posthog?.capture('feed_refresh_clicked')
+  }
+
+  const trackFeedRefreshCompleted = (itemCount: number, categories: string[], durationMs: number) => {
+    posthog?.capture('feed_refresh_completed', {
+      feed_item_count: itemCount,
+      feed_categories: categories,
+      generation_duration_ms: durationMs,
+    })
+  }
+
+  const trackFeedItemClicked = (itemId: string, itemType: string, title: string, source?: string) => {
+    posthog?.capture('feed_item_clicked', {
+      item_id: itemId,
+      item_type: itemType,
+      item_title: title,
+      item_source: source,
+    })
+  }
+
+  const trackFeedItemExpanded = (itemId: string, itemType: string) => {
+    posthog?.capture('feed_item_expanded', {
+      item_id: itemId,
+      item_type: itemType,
+    })
+  }
+
+  const trackFeedCategoryInteraction = (categoryType: string, itemCount: number) => {
+    posthog?.capture('feed_category_viewed', {
+      category_type: categoryType,
+      category_item_count: itemCount,
+    })
+  }
+
+  // Research-specific tracking
+  const trackResearchDiscovery = (discoveryType: 'breakthrough_paper' | 'funding_opportunity' | 'collaboration_lead') => {
+    posthog?.capture('research_discovery_identified', {
+      discovery_type: discoveryType,
+    })
+  }
+
+  const trackContentEngagement = (engagementType: 'time_spent' | 'bookmark' | 'share', metadata?: Record<string, any>) => {
+    posthog?.capture('content_engagement', {
+      engagement_type: engagementType,
+      ...metadata,
+    })
+  }
+
+  // Error tracking
+  const trackError = (errorType: string, errorMessage: string, context?: Record<string, any>) => {
+    posthog?.capture('error_occurred', {
+      error_type: errorType,
+      error_message: errorMessage,
+      page_url: window.location.href,
+      ...context,
+    })
+  }
+
+  return {
+    // Authentication
+    trackUserSignup,
+    trackUserSignupSuccess,
+    trackUserLogin,
+    trackUserLoginSuccess,
+    trackUserLogout,
+
+    // Onboarding
+    trackOnboardingStarted,
+    trackUrlSubmitted,
+    trackProfileGenerationStarted,
+    trackProfileGenerationCompleted,
+    trackOnboardingCompleted,
+
+    // Dashboard
+    trackFeedRefreshClicked,
+    trackFeedRefreshCompleted,
+    trackFeedItemClicked,
+    trackFeedItemExpanded,
+    trackFeedCategoryInteraction,
+
+    // Research
+    trackResearchDiscovery,
+    trackContentEngagement,
+
+    // Errors
+    trackError,
+  }
+}
+
+// Helper function to determine page type from pathname
+function getPageType(pathname: string): string {
+  if (pathname === '/') return 'landing'
+  if (pathname === '/login') return 'authentication'
+  if (pathname === '/dashboard') return 'dashboard'
+  if (pathname.startsWith('/onboarding')) {
+    if (pathname.includes('processing')) return 'onboarding_processing'
+    return 'onboarding'
+  }
+  return 'unknown'
+}

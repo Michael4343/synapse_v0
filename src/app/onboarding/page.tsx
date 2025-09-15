@@ -2,12 +2,14 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { submitProfileData } from './actions'
+import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 
 export default function Onboarding() {
+  const tracking = usePostHogTracking()
   const [linkedin, setLinkedin] = useState('')
   const [scholar, setScholar] = useState('')
   const [company, setCompany] = useState('')
@@ -15,6 +17,10 @@ export default function Onboarding() {
   const [orcid, setOrcid] = useState('')
   const [keywords, setKeywords] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    tracking.trackOnboardingStarted()
+  }, [tracking])
 
   const calculateProgress = () => {
     const fields = [linkedin, scholar, company, website, orcid, keywords]
@@ -29,8 +35,23 @@ export default function Onboarding() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!hasAnyInput()) return
-    
+
     setIsSubmitting(true)
+
+    // Track URL submissions
+    const urls = [linkedin, scholar, company, website, orcid].filter(url => url.trim())
+    urls.forEach(url => {
+      let urlType = 'other'
+      if (url.includes('linkedin.com')) urlType = 'linkedin'
+      else if (url.includes('scholar.google.com')) urlType = 'google_scholar'
+      else if (url.includes('orcid.org')) urlType = 'orcid'
+
+      tracking.trackUrlSubmitted(url, urlType)
+    })
+
+    // Track profile generation start
+    tracking.trackProfileGenerationStarted()
+
     const formData = new FormData()
     formData.append('linkedin', linkedin)
     formData.append('scholar', scholar)
@@ -38,7 +59,7 @@ export default function Onboarding() {
     formData.append('website', website)
     formData.append('orcid', orcid)
     formData.append('keywords', keywords)
-    
+
     await submitProfileData(formData)
   }
 

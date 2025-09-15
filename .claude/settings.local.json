@@ -24,7 +24,8 @@
       "Bash(npx tsc:*)",
       "Bash(netstat:*)",
       "Bash(grep:*)",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "WebFetch(domain:posthog.com)"
     ],
     "deny": [],
     "ask": []

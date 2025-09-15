@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { PostHogProvider } from '@/providers/PostHogProvider'
 import './globals.css'
 
 // Use system fonts in development for maximum speed
@@ -16,7 +17,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="font-system">{children}</body>
+      <body className="font-system">
+        <PostHogProvider>
+          {children}
+        </PostHogProvider>
+      </body>
     </html>
   )
 }
