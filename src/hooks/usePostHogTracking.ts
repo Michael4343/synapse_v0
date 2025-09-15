@@ -142,6 +142,14 @@ export function usePostHogTracking() {
     })
   }
 
+  // Generic event tracking
+  const trackEvent = (eventName: string, properties?: Record<string, any>) => {
+    posthog?.capture(eventName, {
+      page_url: window.location.href,
+      ...properties,
+    })
+  }
+
   return {
     // Authentication
     trackUserSignup,
@@ -170,6 +178,9 @@ export function usePostHogTracking() {
 
     // Errors
     trackError,
+
+    // Generic
+    trackEvent,
   }
 }
 

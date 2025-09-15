@@ -21,7 +21,7 @@ export default function FeedItem({ item }: FeedItemProps) {
 
   const handleItemClick = () => {
     tracking.trackFeedItemClicked(
-      item.id,
+      String(item.id),
       item.item_type,
       item.title,
       getSourceFromUrl(item.url)

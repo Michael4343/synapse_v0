@@ -12,7 +12,7 @@ serve(async (req) => {
   console.log('=== GENERATE FEED FUNCTION STARTED ===')
   console.log('Method:', req.method)
   console.log('URL:', req.url)
-  
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     console.log('Handling OPTIONS request')
@@ -20,6 +20,17 @@ serve(async (req) => {
   }
 
   try {
+    // Parse request body for preferences
+    let preferences = null
+    if (req.method === 'POST') {
+      try {
+        const body = await req.json()
+        preferences = body.preferences
+        console.log('Received preferences:', preferences)
+      } catch (err) {
+        console.log('No preferences in request body or parsing failed')
+      }
+    }
     console.log('Creating Supabase client...')
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -130,60 +141,105 @@ serve(async (req) => {
     const cutoffDateString = cutoffDate.toISOString().split('T')[0]
     const todayString = currentDate.toISOString().split('T')[0]
 
-    // Prepare the simplified prompt for faster processing
+    // Build search keywords from profile and user preferences
+    const searchKeywords = []
+    if (preferences?.keywords && preferences.keywords.trim()) {
+      searchKeywords.push(preferences.keywords.trim())
+    }
+
+    // Extract research areas from profile for additional context
+    const profileKeywords = profileText.match(/(?:research|field|area|focus|interest):\s*([^\n,]+)/gi)
+    if (profileKeywords) {
+      profileKeywords.forEach(match => {
+        const keyword = match.replace(/(?:research|field|area|focus|interest):\s*/gi, '').trim()
+        if (keyword) searchKeywords.push(keyword)
+      })
+    }
+
+    const keywordContext = searchKeywords.length > 0
+      ? `\n\nADDITIONAL SEARCH KEYWORDS: ${searchKeywords.join(', ')}`
+      : ''
+
+    // Determine which categories to include based on preferences
+    const defaultCategories = {
+      publications: true,
+      patents: true,
+      funding_opportunities: true,
+      trending_science_news: true
+    }
+
+    const enabledCategories = preferences?.categories || defaultCategories
+
+    // Build category sections dynamically
+    const categoryInstructions = []
+    const jsonStructure = {}
+
+    if (enabledCategories.publications) {
+      categoryInstructions.push('1. PUBLICATIONS (past 6 months): Research papers, journal articles, and preprints. Include papers from journals, arxiv, research repositories.')
+      jsonStructure['publications'] = [
+        {
+          "title": "Paper title",
+          "authors": ["Author1", "Author2"],
+          "summary": "Brief summary of the paper",
+          "url": "https://journal.com/articles/direct-paper-link"
+        }
+      ]
+    }
+
+    if (enabledCategories.patents) {
+      categoryInstructions.push('2. PATENTS (past 6 months): Recently granted patents. Include patents from patent databases and offices.')
+      jsonStructure['patents'] = [
+        {
+          "title": "Patent title",
+          "patent_number": "US1234567",
+          "inventors": ["Inventor1"],
+          "summary": "Brief summary",
+          "url": "https://example.com/patent"
+        }
+      ]
+    }
+
+    if (enabledCategories.funding_opportunities) {
+      categoryInstructions.push(`3. FUNDING (active with future deadlines): Grant opportunities with application deadlines AFTER ${todayString}. Only include grants that researchers can still apply for. Geographic eligibility: ${geographicRegions}`)
+      jsonStructure['funding_opportunities'] = [
+        {
+          "title": "Grant title",
+          "issuing_agency": "Agency name",
+          "funding_amount": "$X amount",
+          "deadline": "2024-MM-DD",
+          "eligible_regions": "Regions (must match researcher eligibility)",
+          "summary": "Brief summary",
+          "url": "https://example.com/grant"
+        }
+      ]
+    }
+
+    if (enabledCategories.trending_science_news) {
+      categoryInstructions.push('4. NEWS (past 3 months): Science news, research announcements, university press releases, and articles about research developments.')
+      jsonStructure['trending_science_news'] = [
+        {
+          "title": "News title",
+          "source": "Source name",
+          "summary": "Brief summary",
+          "url": "https://example.com/news"
+        }
+      ]
+    }
+
+    // Prepare the prompt for enabled categories only
     const prompt = `Find recent research content for this researcher. Return 3-4 items per category.
 
 TODAY'S DATE: ${todayString}
 
-RESEARCHER: ${profile.profile_text}
+RESEARCHER: ${profile.profile_text}${keywordContext}
 
 EXCLUDE: ${researcherName ? `Content by "${researcherName}". ` : ''}${institution ? `Content from "${institution}". ` : ''}Content older than 6 months.
 
 FIND (recent content only):
-1. PUBLICATIONS (past 6 months): Research papers, journal articles, and preprints. Include papers from journals, arxiv, research repositories.
-2. PATENTS (past 6 months): Recently granted patents. Include patents from patent databases and offices.
-3. FUNDING (active with future deadlines): Grant opportunities with application deadlines AFTER ${todayString}. Only include grants that researchers can still apply for. Geographic eligibility: ${geographicRegions}
-4. NEWS (past 3 months): Science news, research announcements, university press releases, and articles about research developments.
+${categoryInstructions.join('\n')}
 
 Return ONLY this JSON structure:
-{
-  "publications": [
-    {
-      "title": "Paper title",
-      "authors": ["Author1", "Author2"],
-      "summary": "Brief summary of the paper",
-      "url": "https://journal.com/articles/direct-paper-link"
-    }
-  ],
-  "patents": [
-    {
-      "title": "Patent title",
-      "patent_number": "US1234567",
-      "inventors": ["Inventor1"],
-      "summary": "Brief summary",
-      "url": "https://example.com/patent"
-    }
-  ],
-  "funding_opportunities": [
-    {
-      "title": "Grant title",
-      "issuing_agency": "Agency name",
-      "funding_amount": "$X amount",
-      "deadline": "2024-MM-DD",
-      "eligible_regions": "Regions (must match researcher eligibility)",
-      "summary": "Brief summary",
-      "url": "https://example.com/grant"
-    }
-  ],
-  "trending_science_news": [
-    {
-      "title": "News title",
-      "source": "Source name",
-      "summary": "Brief summary",
-      "url": "https://example.com/news"
-    }
-  ]
-}
+${JSON.stringify(jsonStructure, null, 2)}
 
 Do not include any explanatory text, reasoning, or other content outside of this JSON object.`
 
@@ -297,8 +353,8 @@ Do not include any explanatory text, reasoning, or other content outside of this
     // Prepare feed items for insertion
     const feedItems = []
 
-    // Process publications
-    if (feedData.publications) {
+    // Process publications (only if enabled)
+    if (enabledCategories.publications && feedData.publications) {
       for (const pub of feedData.publications) {
         feedItems.push({
           user_id: user.id,
@@ -311,8 +367,8 @@ Do not include any explanatory text, reasoning, or other content outside of this
       }
     }
 
-    // Process patents
-    if (feedData.patents) {
+    // Process patents (only if enabled)
+    if (enabledCategories.patents && feedData.patents) {
       for (const patent of feedData.patents) {
         feedItems.push({
           user_id: user.id,
@@ -328,8 +384,8 @@ Do not include any explanatory text, reasoning, or other content outside of this
       }
     }
 
-    // Process funding opportunities
-    if (feedData.funding_opportunities) {
+    // Process funding opportunities (only if enabled)
+    if (enabledCategories.funding_opportunities && feedData.funding_opportunities) {
       for (const funding of feedData.funding_opportunities) {
         feedItems.push({
           user_id: user.id,
@@ -347,8 +403,8 @@ Do not include any explanatory text, reasoning, or other content outside of this
       }
     }
 
-    // Process trending science news
-    if (feedData.trending_science_news) {
+    // Process trending science news (only if enabled)
+    if (enabledCategories.trending_science_news && feedData.trending_science_news) {
       for (const news of feedData.trending_science_news) {
         feedItems.push({
           user_id: user.id,
@@ -399,6 +455,11 @@ Do not include any explanatory text, reasoning, or other content outside of this
           contentCutoffDate: cutoffDateString,
           exclusionFiltersApplied: !!(researcherName || institution),
           geographicFilteringApplied: eligibleRegions.length > 1
+        },
+        preferences: {
+          keywordsUsed: preferences?.keywords || '',
+          enabledCategories: enabledCategories,
+          searchKeywordsCount: searchKeywords.length
         }
       }),
       {

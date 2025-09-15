@@ -92,7 +92,8 @@ v1.0 → Production-ready
 │   ├── /components             # Reusable React components
 │   │   ├── ErrorBoundary.tsx   # Error handling component
 │   │   ├── Loading.tsx         # Loading states component
-│   │   ├── RefreshFeedButton.tsx  # Feed regeneration with tracking
+│   │   ├── RefreshFeedButton.tsx  # Feed regeneration with settings and tracking
+│   │   ├── FeedSettingsModal.tsx  # Feed preferences modal with keywords and categories
 │   │   └── FeedItem.tsx        # Individual feed item with interaction tracking
 │   ├── /hooks                  # Custom React hooks
 │   │   ├── useProfile.ts       # Profile/feed generation hooks
@@ -109,7 +110,8 @@ v1.0 → Production-ready
 │   ├── /migrations             # Database schema migrations
 │   │   ├── 001_initial_schema.sql       # Core tables and RLS
 │   │   ├── 002_profile_trigger.sql      # Auto-profile creation
-│   │   └── 003_add_keywords_profile_type.sql # Extended profile data
+│   │   ├── 003_add_keywords_profile_type.sql # Extended profile data
+│   │   └── 004_add_feed_preferences.sql # Feed customization preferences
 │   └── /functions              # Supabase Edge Functions (cloud)
 │       ├── /generate-profile   # Pass 1: Profile generation
 │       │   └── index.ts        # Perplexity + Firecrawl integration
@@ -153,6 +155,7 @@ npm run typecheck # TypeScript validation
 - ✅ **Perplexity Integration**: Deep research API with structured outputs
 - ✅ **Real-time Processing**: Live progress updates during onboarding
 - ✅ **Categorised Feed Display**: Publications, patents, funding, news
+- ✅ **Feed Preferences System**: User-customizable feed settings with keyword search and category toggles
 - ✅ **Responsive UI**: Tailwind CSS with modern design patterns
 - ✅ **Australian English**: Consistent spelling throughout UI
 - ✅ **Performance Optimised**: WSL-specific development optimisations
@@ -351,6 +354,46 @@ Successfully integrated PostHog analytics with full session recording and compre
 - **Performance Insights**: Real-time monitoring of AI generation operations
 - **Prototype Analytics**: Maximum data collection for early product insights
 - **Error Tracking**: Comprehensive error monitoring with contextual debugging
+
+---
+
+## 🛠️ Feed Preferences System - September 15, 2025
+
+### New User Customization Feature
+Successfully implemented comprehensive feed preferences system allowing users to customize their research feed with keyword search and category filtering.
+
+#### Features Implemented:
+- ✅ **Keyword Search**: Additional search terms to refine feed content beyond user profile
+- ✅ **Category Toggles**: Enable/disable specific content types (Publications, Patents, Funding, News)
+- ✅ **Persistent Settings**: User preferences saved to database and auto-loaded on refresh
+- ✅ **Settings Modal**: Clean UI with gear icon trigger and intuitive form interface
+- ✅ **Smart Integration**: Keywords seamlessly integrated into AI prompt generation
+
+#### Technical Implementation:
+1. **Database Schema**: Added `feed_preferences` JSONB column to profiles table
+2. **React Components**: Created `FeedSettingsModal` with keyword input and category checkboxes
+3. **Enhanced Refresh Button**: Updated with settings gear icon and modal integration
+4. **Hook Modifications**: Extended `useProfile` to accept preferences parameter
+5. **Edge Function Updates**: Modified AI prompt generation to incorporate user keywords and category filtering
+
+#### User Experience:
+- **Settings Access**: Gear icon next to refresh button for easy discovery
+- **Real-time Persistence**: Settings automatically saved and applied to all future feed refreshes
+- **Keyword Enhancement**: User keywords combined with profile analysis for better content discovery
+- **Category Control**: Fine-grained control over content types displayed in feed
+
+#### Files Added/Modified:
+1. **New**: `supabase/migrations/004_add_feed_preferences.sql` - Database schema extension
+2. **New**: `src/components/FeedSettingsModal.tsx` - Settings interface component
+3. **Modified**: `src/components/RefreshFeedButton.tsx` - Added settings integration
+4. **Modified**: `src/hooks/useProfile.ts` - Added preferences parameter support
+5. **Modified**: `supabase/functions/generate-feed/index.ts` - Enhanced AI prompt with preferences
+
+#### Impact Achieved:
+- **User Control**: Full customization over feed content and discovery keywords
+- **Enhanced Discovery**: Keyword search extends beyond profile for broader research discovery
+- **Performance**: Only requested categories are processed, improving generation speed
+- **Persistence**: Settings saved permanently for consistent user experience
 
 ---
 
