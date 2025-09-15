@@ -14,12 +14,13 @@ export default function RefreshFeedButton() {
       setSuccess(false)
       await generateFeed()
       setSuccess(true)
-      
-      // Refresh the page to show new items
+
+      // Refresh the page to show new items and reset success state
       setTimeout(() => {
+        setSuccess(false)
         router.refresh()
       }, 1000)
-      
+
     } catch (err) {
       console.error('Failed to refresh feed:', err)
     }

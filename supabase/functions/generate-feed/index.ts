@@ -58,24 +58,107 @@ serve(async (req) => {
       throw new Error('User profile not found. Please complete profile generation first.')
     }
 
-    // Prepare the prompt for Perplexity API
-    const prompt = `You are a hyper-specialized research assistant for a leading expert. Your task is to find the most recent and highly relevant professional information for this expert based on their detailed profile provided below. You must find content across four specific categories: academic publications, patents, funding opportunities, and trending science news. Your response must be a single, valid JSON object that strictly adheres to the provided JSON Schema.
+    // Extract researcher information for exclusion filtering
+    console.log('Extracting researcher identity from profile...')
+    const profileText = profile.profile_text
 
-Expert Profile:
+    // Extract researcher name and institution patterns for exclusion
+    const nameMatches = profileText.match(/(?:Name|Called|Known as):\s*([^\n]+)/i) ||
+                       profileText.match(/^([A-Z][a-z]+ [A-Z][a-z]+)/m) ||
+                       profileText.match(/Dr\.?\s+([A-Z][a-z]+ [A-Z][a-z]+)/i)
+
+    const institutionMatches = profileText.match(/(?:University|Institute|Research|Laboratory|Lab|College|School):\s*([^\n]+)/i) ||
+                              profileText.match(/(University of [^,\n]+)/i) ||
+                              profileText.match(/([A-Z][a-z]+ University)/i) ||
+                              profileText.match(/(CSIRO|RMIT|MIT|Stanford|Harvard|Oxford|Cambridge)/i)
+
+    const researcherName = nameMatches ? nameMatches[1].trim() : ''
+    const institution = institutionMatches ? institutionMatches[1].trim() : ''
+
+    // Extract geographic location for eligibility filtering
+    const countryMatches = profileText.match(/(?:Country|Location|Based in|Located in):\s*([^\n]+)/i) ||
+                          profileText.match(/(Australia|United States|Canada|United Kingdom|Germany|France|Japan|Singapore|New Zealand)/i) ||
+                          profileText.match(/(Australian|American|Canadian|British|German|French|Japanese|Singaporean)/i)
+
+    const cityMatches = profileText.match(/(?:City|Location):\s*([^\n,]+)/i) ||
+                       profileText.match(/(Melbourne|Sydney|Brisbane|Perth|Adelaide|Canberra|Auckland|Wellington)/i) ||
+                       profileText.match(/(London|Boston|New York|San Francisco|Berlin|Paris|Tokyo|Singapore)/i)
+
+    // Determine geographic region for funding eligibility
+    let eligibleRegions = ['International'] // Always include international opportunities
+
+    if (countryMatches) {
+      const country = countryMatches[1].toLowerCase()
+      if (country.includes('australia') || country.includes('australian')) {
+        eligibleRegions.push('Australia', 'Asia-Pacific', 'Commonwealth')
+      } else if (country.includes('united states') || country.includes('american')) {
+        eligibleRegions.push('United States', 'North America', 'Americas')
+      } else if (country.includes('canada') || country.includes('canadian')) {
+        eligibleRegions.push('Canada', 'North America', 'Commonwealth', 'Americas')
+      } else if (country.includes('united kingdom') || country.includes('british')) {
+        eligibleRegions.push('United Kingdom', 'Europe', 'Commonwealth', 'EU')
+      } else if (country.includes('germany') || country.includes('german')) {
+        eligibleRegions.push('Germany', 'Europe', 'EU')
+      } else if (country.includes('singapore') || country.includes('singaporean')) {
+        eligibleRegions.push('Singapore', 'Asia-Pacific', 'ASEAN')
+      }
+    }
+
+    // Try to infer from institution if country not explicit
+    if (institution && eligibleRegions.length === 1) {
+      const institutionLower = institution.toLowerCase()
+      if (institutionLower.includes('csiro') || institutionLower.includes('university of melbourne') ||
+          institutionLower.includes('university of sydney') || institutionLower.includes('rmit') ||
+          institutionLower.includes('anu') || institutionLower.includes('unsw') || institutionLower.includes('uq')) {
+        eligibleRegions.push('Australia', 'Asia-Pacific', 'Commonwealth')
+      } else if (institutionLower.includes('mit') || institutionLower.includes('harvard') ||
+                institutionLower.includes('stanford') || institutionLower.includes('caltech')) {
+        eligibleRegions.push('United States', 'North America', 'Americas')
+      } else if (institutionLower.includes('oxford') || institutionLower.includes('cambridge') ||
+                institutionLower.includes('imperial college') || institutionLower.includes('ucl')) {
+        eligibleRegions.push('United Kingdom', 'Europe', 'Commonwealth', 'EU')
+      }
+    }
+
+    const geographicRegions = eligibleRegions.join(', ')
+
+    console.log('Extracted researcher identity:', { researcherName, institution, eligibleRegions })
+
+    // Get current date for time filtering
+    const currentDate = new Date()
+    const cutoffDate = new Date(currentDate.getFullYear() - 1.5, currentDate.getMonth(), currentDate.getDate())
+    const cutoffDateString = cutoffDate.toISOString().split('T')[0]
+
+    // Prepare the optimized discovery-focused prompt
+    const prompt = `You are a research discovery assistant. Find breakthrough content for this researcher that advances their work.
+
+RESEARCHER PROFILE:
 ${profile.profile_text}
 
-Based on this profile, find:
+EXCLUSIONS:
+${researcherName ? `- No content by "${researcherName}"` : ''}
+${institution ? `- No content from "${institution}"` : ''}
+- No content before ${cutoffDateString}
+- No basic reviews or incremental work
+
+GEOGRAPHIC SCOPE:
+For funding: Only include opportunities available to researchers in: ${geographicRegions}
+
+DISCOVERY FOCUS:
+Find recent (${cutoffDateString}+), high-impact content across 4 categories:
 1. Recent academic publications (papers, research articles) relevant to their field
 2. Patents recently granted or published in their area of expertise
 3. Funding opportunities (grants, RFPs) that align with their research interests
 4. Trending science news and developments in their industry
 
-Return your response as a single, valid JSON object with the following exact structure:
+Prioritize: Cross-disciplinary breakthroughs, emerging paradigms, technology transfers, competitive intelligence.
+
+Return ONLY this JSON structure:
 {
   "publications": [
     {
       "title": "Paper title",
-      "authors": ["Author 1", "Author 2"],
+      "authors": ["Author1", "Author2"],
       "summary": "Brief summary of the paper",
       "url": "https://example.com/paper"
     }
@@ -84,7 +167,7 @@ Return your response as a single, valid JSON object with the following exact str
     {
       "title": "Patent title",
       "patent_number": "US1234567",
-      "inventors": ["Inventor 1"],
+      "inventors": ["Inventor1"],
       "summary": "Brief summary",
       "url": "https://example.com/patent"
     }
@@ -93,8 +176,10 @@ Return your response as a single, valid JSON object with the following exact str
     {
       "title": "Grant title",
       "issuing_agency": "Agency name",
+      "funding_amount": "$X amount",
+      "deadline": "2024-MM-DD",
+      "eligible_regions": "Regions (must match researcher eligibility)",
       "summary": "Brief summary",
-      "deadline": "2024-12-31",
       "url": "https://example.com/grant"
     }
   ],
@@ -117,7 +202,7 @@ Do not include any explanatory text, reasoning, or other content outside of this
     
     // Call Perplexity API with timeout
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 45000) // 45 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 90000) // 90 second timeout for complex discovery
     
     const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -243,9 +328,9 @@ Do not include any explanatory text, reasoning, or other content outside of this
           title: patent.title,
           summary: patent.summary,
           url: patent.url,
-          metadata: { 
+          metadata: {
             patent_number: patent.patent_number,
-            inventors: patent.inventors 
+            inventors: patent.inventors
           }
         })
       }
@@ -260,9 +345,11 @@ Do not include any explanatory text, reasoning, or other content outside of this
           title: funding.title,
           summary: funding.summary,
           url: funding.url,
-          metadata: { 
+          metadata: {
             issuing_agency: funding.issuing_agency,
-            deadline: funding.deadline 
+            funding_amount: funding.funding_amount,
+            deadline: funding.deadline,
+            eligible_regions: funding.eligible_regions
           }
         })
       }
@@ -304,14 +391,22 @@ Do not include any explanatory text, reasoning, or other content outside of this
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         itemsGenerated: feedItems.length,
         categories: {
           publications: feedData.publications?.length || 0,
           patents: feedData.patents?.length || 0,
           funding_opportunities: feedData.funding_opportunities?.length || 0,
           trending_science_news: feedData.trending_science_news?.length || 0
+        },
+        discoveryMetrics: {
+          researcherName: researcherName || 'Unknown',
+          institution: institution || 'Unknown',
+          eligibleRegions: eligibleRegions,
+          contentCutoffDate: cutoffDateString,
+          exclusionFiltersApplied: !!(researcherName || institution),
+          geographicFilteringApplied: eligibleRegions.length > 1
         }
       }),
       {

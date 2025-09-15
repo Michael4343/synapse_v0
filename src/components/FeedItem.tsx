@@ -31,8 +31,42 @@ export default function FeedItem({ item }: FeedItemProps) {
       case 'trending_science_news':
         return 'News'
       default:
-        return itemType
+        return itemType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
     }
+  }
+
+  const getImpactIcon = (impactScore: string) => {
+    switch (impactScore) {
+      case 'H':
+        return '🔥' // High impact
+      case 'M':
+        return '⭐' // Medium impact
+      case 'L':
+        return '💡' // Low impact
+      default:
+        return ''
+    }
+  }
+
+  const getUrgencyIcon = (urgency: string) => {
+    switch (urgency) {
+      case 'H':
+        return '🚨' // High urgency
+      case 'M':
+        return '⏰' // Medium urgency
+      case 'L':
+        return '📅' // Low urgency
+      default:
+        return ''
+    }
+  }
+
+  const formatAuthors = (authors: string[]) => {
+    if (!authors || authors.length === 0) return ''
+    if (authors.length <= 3) {
+      return authors.join(', ')
+    }
+    return `${authors.slice(0, 3).join(', ')} et al.`
   }
 
   const renderMetadata = () => {
@@ -43,7 +77,7 @@ export default function FeedItem({ item }: FeedItemProps) {
         return (
           <div className="text-sm text-gray-500 mt-1">
             {item.metadata.authors && (
-              <p>Authors: {item.metadata.authors.join(', ')}</p>
+              <p>Authors: {formatAuthors(item.metadata.authors)}</p>
             )}
           </div>
         )
@@ -54,19 +88,40 @@ export default function FeedItem({ item }: FeedItemProps) {
               <p>Patent No: {item.metadata.patent_number}</p>
             )}
             {item.metadata.inventors && (
-              <p>Inventors: {item.metadata.inventors.join(', ')}</p>
+              <p>Inventors: {formatAuthors(item.metadata.inventors)}</p>
             )}
           </div>
         )
       case 'funding_opportunity':
         return (
-          <div className="text-sm text-gray-500 mt-1">
-            {item.metadata.issuing_agency && (
-              <p>Agency: {item.metadata.issuing_agency}</p>
-            )}
-            {item.metadata.deadline && (
-              <p>Deadline: {new Date(item.metadata.deadline).toLocaleDateString()}</p>
-            )}
+          <div className="space-y-2 mt-1">
+            <div className="text-sm text-gray-500">
+              {item.metadata.funding_amount && (
+                <div className="mb-2">
+                  <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-bold">
+                    {item.metadata.funding_amount}
+                  </span>
+                </div>
+              )}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-4">
+                  {item.metadata.issuing_agency && (
+                    <span>Agency: {item.metadata.issuing_agency}</span>
+                  )}
+                  {item.metadata.deadline && (
+                    <span className="text-red-600 font-medium">
+                      ⏰ Due: {new Date(item.metadata.deadline).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+                {item.metadata.eligible_regions && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-green-600">🌍 Eligible:</span>
+                    <span className="text-green-700 font-medium">{item.metadata.eligible_regions}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )
       case 'trending_science_news':

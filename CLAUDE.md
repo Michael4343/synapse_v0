@@ -254,4 +254,52 @@ For detailed historical information and technical implementation details, see `/
 
 ---
 
+## 🔬 Enhanced Feed Discovery System - September 15, 2025
+
+### Major Research Discovery Enhancement
+Successfully redesigned feed generation from basic content aggregation to strategic research discovery tool, eliminating researcher's own work and focusing on breakthrough content.
+
+#### Problems Solved:
+- ❌ **Showing researcher's own work** - Defeating discovery purpose
+- ❌ **Outdated content mixing** - No time filtering or recency focus
+- ❌ **Generic search results** - Lack of strategic value and quality filtering
+- ❌ **Poor relevance ranking** - All content treated equally
+
+#### Solution Implemented:
+- ✅ **Smart exclusion filtering** - Automatically detects and excludes researcher's publications/patents
+- ✅ **Time-bounded discovery** - 18-month window for publications, 6 months for field intelligence
+- ✅ **Quality-focused curation** - High-impact journals, breakthrough methodologies, strategic funding
+- ✅ **Enhanced categorisation** - Four discovery-focused categories with impact/urgency indicators
+
+#### New Discovery Categories:
+1. **Breakthrough Publications** 🔥 - Revolutionary papers with novel methodologies
+2. **Emerging Technologies** ⚡ - Early-stage innovations with application potential
+3. **Strategic Funding** 💎 - High-value opportunities matching researcher capabilities
+4. **Field Intelligence** 📊 - Major developments affecting research landscape
+
+#### Technical Implementation:
+- **Intelligent Profile Analysis**: Extracts researcher name/institution for exclusion
+- **Enhanced Prompt Engineering**: Discovery-focused AI instructions with quality filters
+- **Rich Metadata Processing**: Impact scoring, relevance analysis, strategic value assessment
+- **Visual Quality Indicators**: 🔥⭐💡 (impact) and 🚨⏰📅 (urgency) scoring
+
+#### User Experience Enhancements:
+- **Quality Indicators**: Visual impact and urgency scoring for quick assessment
+- **Contextual Information**: Why content matters specifically for this researcher
+- **Enhanced Metadata Display**: Detailed analysis including fit analysis, competitive advantage
+- **Strategic Categorisation**: Focus on actionable research intelligence
+
+#### Files Modified:
+1. **`supabase/functions/generate-feed/index.ts`**: Complete prompt redesign with exclusion logic (62-181 lines enhanced)
+2. **`src/components/FeedItem.tsx`**: Enhanced UI with quality indicators and rich metadata display
+3. **`docs/enhanced-feed-discovery-system.md`**: Comprehensive documentation of new discovery approach
+
+#### Impact Achieved:
+- **Discovery Value**: Eliminates researcher's own work, focuses on novel breakthroughs
+- **Quality Curation**: High-impact content only with strategic relevance
+- **Actionable Intelligence**: Clear next steps and opportunity identification
+- **Enhanced UX**: Visual quality indicators and contextual explanations
+
+---
+
 *Always update CLAUDE.md at the end of each step with new directory structure and create documentation in `/docs/` for detailed changes.*
