@@ -210,6 +210,10 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
     setShowKeywordSearch(true)
   }
 
+  const handleAddSource = () => {
+    alert('Add Source feature coming soon! This will allow you to manually add URLs of research papers, patents, or other sources you\'re interested in.')
+  }
+
   // Determine which feed data to display
   const displayFeedItems = activeSessionId ? sessionFeedItems : (feedItems || [])
   const displayGroupedItems = activeSessionId ? sessionGroupedItems : groupedItems
@@ -246,7 +250,7 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3">
                       {/* Search Button */}
                       <button
                         onClick={handleKeywordSearchOpen}
@@ -257,6 +261,18 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                         </svg>
                         Search
                       </button>
+
+                      {/* Add Source Button */}
+                      <button
+                        onClick={handleAddSource}
+                        className="inline-flex items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                      >
+                        <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Add Source
+                      </button>
+
                       {children}
                     </div>
                   </div>
