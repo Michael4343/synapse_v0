@@ -119,8 +119,9 @@ export default function FeedItem({ item }: FeedItemProps) {
               )}
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-4">
+                  <span>Source: {getSourceFromUrl(item.url)}</span>
                   {item.metadata.issuing_agency && (
-                    <span>Source: {item.metadata.issuing_agency}</span>
+                    <span>Agency: {item.metadata.issuing_agency}</span>
                   )}
                   {item.metadata.deadline && (
                     <span className="text-red-600 font-medium">
@@ -141,9 +142,7 @@ export default function FeedItem({ item }: FeedItemProps) {
       case 'trending_science_news':
         return (
           <div className="text-sm text-gray-500 mt-1">
-            {item.metadata.source && (
-              <p>Source: {item.metadata.source}</p>
-            )}
+            <p>Source: {getSourceFromUrl(item.url)}</p>
           </div>
         )
       default:

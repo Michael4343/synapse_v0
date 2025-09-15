@@ -129,38 +129,18 @@ serve(async (req) => {
     const cutoffDate = new Date(currentDate.getFullYear() - 1.5, currentDate.getMonth(), currentDate.getDate())
     const cutoffDateString = cutoffDate.toISOString().split('T')[0]
 
-    // Prepare the optimized discovery-focused prompt
-    const prompt = `You are a research discovery assistant. Find breakthrough content for this researcher that advances their work.
+    // Prepare the simplified prompt for faster processing
+    const prompt = `Find recent research content for this researcher. Return 3-4 items per category.
 
-RESEARCHER PROFILE:
-${profile.profile_text}
+RESEARCHER: ${profile.profile_text}
 
-🚨 CRITICAL RECENCY REQUIREMENTS - NON-NEGOTIABLE:
-- ONLY FIND CONTENT FROM THE PAST 3-6 MONTHS UP TO NOW
-- REJECT ANYTHING OLDER THAN 6 MONTHS - NO EXCEPTIONS
-- FOCUS ON CUTTING-EDGE, JUST-PUBLISHED RESEARCH
-- VERIFY PUBLICATION RECENCY BEFORE INCLUDING - WHEN IN DOUBT, EXCLUDE
-- PRIORITIZE TRENDING, EMERGING, AND NEWLY-ANNOUNCED DEVELOPMENTS
-- LOOK FOR BREAKTHROUGH DEVELOPMENTS THAT ARE MAKING WAVES RIGHT NOW
+EXCLUDE: ${researcherName ? `Content by "${researcherName}". ` : ''}${institution ? `Content from "${institution}". ` : ''}Content older than 6 months.
 
-EXCLUSIONS:
-${researcherName ? `- No content by "${researcherName}"` : ''}
-${institution ? `- No content from "${institution}"` : ''}
-- No content older than 6 months from now - THIS IS CRITICAL
-- No basic reviews or incremental work
-- No historical or foundational papers - only cutting-edge advances
-
-GEOGRAPHIC SCOPE:
-For funding: Only include opportunities available to researchers in: ${geographicRegions}
-
-DISCOVERY FOCUS - RECENT BREAKTHROUGHS ONLY:
-Find content from the past 3-6 months up to now, high-impact content across 4 categories:
-1. Academic publications from the past 6 months up to now with novel methodologies or breakthrough results
-2. Patents granted in the past 6 months up to now in their area of expertise
-3. Funding opportunities with upcoming deadlines (currently active) that align with their research
-4. Science news from the past 3 months up to now about major developments in their industry
-
-Prioritize: Cross-disciplinary breakthroughs from the past 6 months, emerging paradigms being developed recently, technology transfers happening now, competitive intelligence about recent advances.
+FIND (recent content only):
+1. PUBLICATIONS (past 6 months): Research papers and journal articles - direct links to actual papers, not news about papers.
+2. PATENTS (past 6 months): Recently granted patents in their field.
+3. FUNDING (active): Grant opportunities with deadlines. Geographic eligibility: ${geographicRegions}
+4. NEWS (past 3 months): Science news and research announcements.
 
 Return ONLY this JSON structure:
 {
@@ -169,7 +149,7 @@ Return ONLY this JSON structure:
       "title": "Paper title",
       "authors": ["Author1", "Author2"],
       "summary": "Brief summary of the paper",
-      "url": "https://example.com/paper"
+      "url": "https://journal.com/articles/direct-paper-link"
     }
   ],
   "patents": [
@@ -208,10 +188,10 @@ Do not include any explanatory text, reasoning, or other content outside of this
     console.log('Calling Perplexity API...')
     console.log('Model: sonar-deep-research')
     console.log('Profile text length:', profile.profile_text.length)
-    
+
     // Call Perplexity API with timeout
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 90000) // 90 second timeout for complex discovery
+    const timeoutId = setTimeout(() => controller.abort(), 180000) // 3 minute timeout for complex discovery
     
     const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
