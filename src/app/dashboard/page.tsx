@@ -72,7 +72,14 @@ export default async function Dashboard() {
                 <div className="space-y-8">
                   {Object.entries(groupedItems).map(([itemType, items]) => {
                     const typedItems = items as any[]
-                    const categoryName = itemType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    const categoryDisplayNames: Record<string, string> = {
+                      'breakthrough_publications': 'Breakthrough Publications',
+                      'emerging_technologies': 'Emerging Technologies',
+                      'strategic_funding': 'Strategic Funding',
+                      'field_intelligence': 'Field Intelligence',
+                      'trending_science_news': 'Trending Science'
+                    }
+                    const categoryName = categoryDisplayNames[itemType] || itemType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
                     
                     return (
                       <div key={itemType} className="space-y-4">

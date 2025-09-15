@@ -135,23 +135,32 @@ serve(async (req) => {
 RESEARCHER PROFILE:
 ${profile.profile_text}
 
+🚨 CRITICAL RECENCY REQUIREMENTS - NON-NEGOTIABLE:
+- ONLY FIND CONTENT FROM THE PAST 3-6 MONTHS UP TO NOW
+- REJECT ANYTHING OLDER THAN 6 MONTHS - NO EXCEPTIONS
+- FOCUS ON CUTTING-EDGE, JUST-PUBLISHED RESEARCH
+- VERIFY PUBLICATION RECENCY BEFORE INCLUDING - WHEN IN DOUBT, EXCLUDE
+- PRIORITIZE TRENDING, EMERGING, AND NEWLY-ANNOUNCED DEVELOPMENTS
+- LOOK FOR BREAKTHROUGH DEVELOPMENTS THAT ARE MAKING WAVES RIGHT NOW
+
 EXCLUSIONS:
 ${researcherName ? `- No content by "${researcherName}"` : ''}
 ${institution ? `- No content from "${institution}"` : ''}
-- No content before ${cutoffDateString}
+- No content older than 6 months from now - THIS IS CRITICAL
 - No basic reviews or incremental work
+- No historical or foundational papers - only cutting-edge advances
 
 GEOGRAPHIC SCOPE:
 For funding: Only include opportunities available to researchers in: ${geographicRegions}
 
-DISCOVERY FOCUS:
-Find recent (${cutoffDateString}+), high-impact content across 4 categories:
-1. Recent academic publications (papers, research articles) relevant to their field
-2. Patents recently granted or published in their area of expertise
-3. Funding opportunities (grants, RFPs) that align with their research interests
-4. Trending science news and developments in their industry
+DISCOVERY FOCUS - RECENT BREAKTHROUGHS ONLY:
+Find content from the past 3-6 months up to now, high-impact content across 4 categories:
+1. Academic publications from the past 6 months up to now with novel methodologies or breakthrough results
+2. Patents granted in the past 6 months up to now in their area of expertise
+3. Funding opportunities with upcoming deadlines (currently active) that align with their research
+4. Science news from the past 3 months up to now about major developments in their industry
 
-Prioritize: Cross-disciplinary breakthroughs, emerging paradigms, technology transfers, competitive intelligence.
+Prioritize: Cross-disciplinary breakthroughs from the past 6 months, emerging paradigms being developed recently, technology transfers happening now, competitive intelligence about recent advances.
 
 Return ONLY this JSON structure:
 {

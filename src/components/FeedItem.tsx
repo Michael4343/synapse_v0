@@ -69,6 +69,7 @@ export default function FeedItem({ item }: FeedItemProps) {
     return `${authors.slice(0, 3).join(', ')} et al.`
   }
 
+
   const renderMetadata = () => {
     if (!item.metadata) return null
 
@@ -144,9 +145,6 @@ export default function FeedItem({ item }: FeedItemProps) {
           <div className="flex items-center mb-2">
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getBadgeColor(item.item_type)}`}>
               {getItemTypeLabel(item.item_type)}
-            </span>
-            <span className="ml-2 text-xs text-gray-400">
-              {new Date(item.created_at).toLocaleDateString()}
             </span>
           </div>
           
