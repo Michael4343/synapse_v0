@@ -5,6 +5,14 @@ interface FeedItemProps {
 }
 
 export default function FeedItem({ item }: FeedItemProps) {
+  // Filter out funding opportunities with past deadlines
+  if (item.item_type === 'funding_opportunity' && item.metadata?.deadline) {
+    const deadlineDate = new Date(item.metadata.deadline)
+    const today = new Date()
+    if (deadlineDate <= today) {
+      return null // Don't render expired funding opportunities
+    }
+  }
   const getBadgeColor = (itemType: string) => {
     switch (itemType) {
       case 'publication':
@@ -125,7 +133,7 @@ export default function FeedItem({ item }: FeedItemProps) {
                   )}
                   {item.metadata.deadline && (
                     <span className="text-red-600 font-medium">
-                      ⏰ Due: {new Date(item.metadata.deadline).toLocaleDateString()}
+                      ⏰ Due: {new Date(item.metadata.deadline).toLocaleDateString('en-AU')}
                     </span>
                   )}
                 </div>

@@ -124,23 +124,26 @@ serve(async (req) => {
 
     console.log('Extracted researcher identity:', { researcherName, institution, eligibleRegions })
 
-    // Get current date for time filtering
+    // Get current date for time filtering and grant validation
     const currentDate = new Date()
     const cutoffDate = new Date(currentDate.getFullYear() - 1.5, currentDate.getMonth(), currentDate.getDate())
     const cutoffDateString = cutoffDate.toISOString().split('T')[0]
+    const todayString = currentDate.toISOString().split('T')[0]
 
     // Prepare the simplified prompt for faster processing
     const prompt = `Find recent research content for this researcher. Return 3-4 items per category.
+
+TODAY'S DATE: ${todayString}
 
 RESEARCHER: ${profile.profile_text}
 
 EXCLUDE: ${researcherName ? `Content by "${researcherName}". ` : ''}${institution ? `Content from "${institution}". ` : ''}Content older than 6 months.
 
 FIND (recent content only):
-1. PUBLICATIONS (past 6 months): Research papers and journal articles - direct links to actual papers, not news about papers.
-2. PATENTS (past 6 months): Recently granted patents in their field.
-3. FUNDING (active): Grant opportunities with deadlines. Geographic eligibility: ${geographicRegions}
-4. NEWS (past 3 months): Science news and research announcements.
+1. PUBLICATIONS (past 6 months): Research papers, journal articles, and preprints. Include papers from journals, arxiv, research repositories.
+2. PATENTS (past 6 months): Recently granted patents. Include patents from patent databases and offices.
+3. FUNDING (active with future deadlines): Grant opportunities with application deadlines AFTER ${todayString}. Only include grants that researchers can still apply for. Geographic eligibility: ${geographicRegions}
+4. NEWS (past 3 months): Science news, research announcements, university press releases, and articles about research developments.
 
 Return ONLY this JSON structure:
 {
