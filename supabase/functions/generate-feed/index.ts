@@ -249,39 +249,45 @@ serve(async (req) => {
     let prompt
     if (keywordOnlySearch) {
       // Pure keyword search prompt - no profile bias
-      prompt = `Find recent research content related to these keywords: "${searchKeywords.join(', ')}"
+      prompt = `You are a data extraction assistant. Extract and structure recent research data related to these keywords: "${searchKeywords.join(', ')}"
 
 TODAY'S DATE: ${todayString}
 
-IMPORTANT: This is a pure keyword search. Do NOT consider any researcher profile or existing expertise. Focus ONLY on the provided keywords.
+TASK: Extract structured data from recent research sources (do NOT write research content)
+KEYWORDS: ${searchKeywords.join(', ')}
+IMPORTANT: This is pure keyword-based data extraction. Focus ONLY on the provided keywords.
 
-SEARCH FOCUS: ${searchKeywords.join(', ')}
-
-FIND recent content (past 6 months) in these categories:
+EXTRACT recent data (past 6 months) for these categories:
 ${categoryInstructions.join('\n')}
 
-Return ONLY this JSON structure:
+OUTPUT FORMAT: Return ONLY the following JSON structure (no explanations, no research writing):
 ${JSON.stringify(jsonStructure, null, 2)}
 
-Return 3-4 items per category. Focus on recent, relevant content related to "${searchKeywords.join(', ')}".
-Do not include any explanatory text, reasoning, or other content outside of this JSON object.`
+REQUIREMENTS:
+- Extract 3-4 items per category
+- Focus on recent content related to "${searchKeywords.join(', ')}"
+- Return ONLY valid JSON - no markdown, no explanations, no research articles`
     } else {
       // Profile-based search prompt
-      prompt = `Find recent research content for this researcher. Return 3-4 items per category.
+      prompt = `You are a data extraction assistant. Extract and structure recent research data for this researcher profile.
 
 TODAY'S DATE: ${todayString}
 
-RESEARCHER: ${profile.profile_text}${keywordContext}
+TASK: Extract structured data from research sources (do NOT write research content)
+RESEARCHER PROFILE: ${profile.profile_text}${keywordContext}
 
-EXCLUDE: ${researcherName ? `Content by "${researcherName}". ` : ''}${institution ? `Content from "${institution}". ` : ''}Content older than 6 months.
+EXCLUSIONS: ${researcherName ? `Content by "${researcherName}". ` : ''}${institution ? `Content from "${institution}". ` : ''}Content older than 6 months.
 
-FIND (recent content only):
+EXTRACT recent data for these categories:
 ${categoryInstructions.join('\n')}
 
-Return ONLY this JSON structure:
+OUTPUT FORMAT: Return ONLY the following JSON structure (no explanations, no research writing):
 ${JSON.stringify(jsonStructure, null, 2)}
 
-Do not include any explanatory text, reasoning, or other content outside of this JSON object.`
+REQUIREMENTS:
+- Extract 3-4 items per category
+- Focus on content relevant to the researcher's profile
+- Return ONLY valid JSON - no markdown, no explanations, no research articles`
     }
 
     // Call Perplexity API with structured output

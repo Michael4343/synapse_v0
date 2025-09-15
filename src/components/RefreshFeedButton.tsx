@@ -114,8 +114,7 @@ export default function RefreshFeedButton() {
 
       // Refresh the page to show new items and reset success state
       setTimeout(() => {
-        setSuccess(false)
-        router.refresh()
+        window.location.reload()
       }, 1000)
 
     } catch (err) {
