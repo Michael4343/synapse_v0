@@ -20,13 +20,16 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request body for preferences
+    // Parse request body for preferences and session ID
     let preferences = null
+    let sessionId = null
     if (req.method === 'POST') {
       try {
         const body = await req.json()
         preferences = body.preferences
+        sessionId = body.sessionId
         console.log('Received preferences:', preferences)
+        console.log('Received sessionId:', sessionId)
       } catch (err) {
         console.log('No preferences in request body or parsing failed')
       }
@@ -340,11 +343,12 @@ Do not include any explanatory text, reasoning, or other content outside of this
       throw new Error(`Invalid JSON response from AI: ${error.message}`)
     }
 
-    // Delete existing feed items for user
+    // Delete existing feed items for user (only current feed, not sessions)
     const { error: deleteError } = await supabaseClient
       .from('feed_items')
       .delete()
       .eq('user_id', user.id)
+      .is('session_id', null)
 
     if (deleteError) {
       throw new Error('Failed to clear existing feed items')
@@ -362,6 +366,7 @@ Do not include any explanatory text, reasoning, or other content outside of this
           title: pub.title,
           summary: pub.summary,
           url: pub.url,
+          session_id: sessionId,
           metadata: { authors: pub.authors }
         })
       }
@@ -376,6 +381,7 @@ Do not include any explanatory text, reasoning, or other content outside of this
           title: patent.title,
           summary: patent.summary,
           url: patent.url,
+          session_id: sessionId,
           metadata: {
             patent_number: patent.patent_number,
             inventors: patent.inventors
@@ -393,6 +399,7 @@ Do not include any explanatory text, reasoning, or other content outside of this
           title: funding.title,
           summary: funding.summary,
           url: funding.url,
+          session_id: sessionId,
           metadata: {
             issuing_agency: funding.issuing_agency,
             funding_amount: funding.funding_amount,
@@ -412,6 +419,7 @@ Do not include any explanatory text, reasoning, or other content outside of this
           title: news.title,
           summary: news.summary,
           url: news.url,
+          session_id: sessionId,
           metadata: { source: news.source }
         })
       }

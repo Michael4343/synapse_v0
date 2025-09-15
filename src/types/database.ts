@@ -56,6 +56,7 @@ export interface Database {
           summary: string | null
           url: string | null
           metadata: any | null
+          session_id: number | null
           created_at: string
         }
         Insert: {
@@ -66,6 +67,7 @@ export interface Database {
           summary?: string | null
           url?: string | null
           metadata?: any | null
+          session_id?: number | null
           created_at?: string
         }
         Update: {
@@ -76,6 +78,33 @@ export interface Database {
           summary?: string | null
           url?: string | null
           metadata?: any | null
+          session_id?: number | null
+          created_at?: string
+        }
+      }
+      feed_sessions: {
+        Row: {
+          id: number
+          user_id: string
+          title: string
+          search_type: string
+          preferences: any | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          title: string
+          search_type?: string
+          preferences?: any | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          title?: string
+          search_type?: string
+          preferences?: any | null
           created_at?: string
         }
       }
@@ -93,5 +122,6 @@ export interface Database {
 }
 
 export type Profile = Database['public']['Tables']['profiles']['Row']
-export type SubmittedUrl = Database['public']['Tables']['submitted_urls']['Row']  
+export type SubmittedUrl = Database['public']['Tables']['submitted_urls']['Row']
 export type FeedItem = Database['public']['Tables']['feed_items']['Row']
+export type FeedSession = Database['public']['Tables']['feed_sessions']['Row']

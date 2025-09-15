@@ -19,13 +19,16 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request body for keywords
+    // Parse request body for keywords and session ID
     let keywords = ''
+    let sessionId = null
     if (req.method === 'POST') {
       try {
         const body = await req.json()
         keywords = body.keywords || ''
+        sessionId = body.sessionId
         console.log('Received keywords:', keywords)
+        console.log('Received sessionId:', sessionId)
       } catch (err) {
         console.log('No keywords in request body or parsing failed')
         throw new Error('Keywords are required for search')

@@ -1,0 +1,218 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import { FeedSession } from '@/types/database'
+import { usePostHogTracking } from '@/hooks/usePostHogTracking'
+import FeedHistoryItem from './FeedHistoryItem'
+
+interface FeedSidebarProps {
+  activeSessionId: number | null
+  onSessionChange: (sessionId: number | null) => void
+  isCollapsed: boolean
+  onToggleCollapse: () => void
+}
+
+export default function FeedSidebar({
+  activeSessionId,
+  onSessionChange,
+  isCollapsed,
+  onToggleCollapse
+}: FeedSidebarProps) {
+  const [sessions, setSessions] = useState<FeedSession[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const tracking = usePostHogTracking()
+  const supabase = createClient()
+
+  useEffect(() => {
+    loadSessions()
+  }, [])
+
+  const loadSessions = async () => {
+    try {
+      setIsLoading(true)
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) return
+
+      const { data: sessions, error } = await supabase
+        .from('feed_sessions')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Failed to load feed sessions:', error)
+        return
+      }
+
+      setSessions(sessions || [])
+    } catch (err) {
+      console.error('Failed to load sessions:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSessionClick = (sessionId: number) => {
+    onSessionChange(sessionId)
+  }
+
+  const handleSessionDelete = async (sessionId: number) => {
+    try {
+      const { error } = await supabase
+        .from('feed_sessions')
+        .delete()
+        .eq('id', sessionId)
+
+      if (error) {
+        console.error('Failed to delete session:', error)
+        return
+      }
+
+      // Remove from local state
+      setSessions(prev => prev.filter(s => s.id !== sessionId))
+
+      // If we deleted the active session, switch to current feed
+      if (activeSessionId === sessionId) {
+        onSessionChange(null)
+      }
+
+      tracking.trackEvent('feed_session_deleted_success', { session_id: sessionId })
+    } catch (err) {
+      console.error('Failed to delete session:', err)
+      tracking.trackError('feed_session_delete_failed', err instanceof Error ? err.message : 'Unknown delete error')
+    }
+  }
+
+  const handleCurrentFeedClick = () => {
+    onSessionChange(null)
+    tracking.trackEvent('current_feed_selected')
+  }
+
+  const handleToggleCollapse = () => {
+    onToggleCollapse()
+    tracking.trackEvent('sidebar_toggled', { collapsed: !isCollapsed })
+  }
+
+  if (isCollapsed) {
+    return (
+      <div className="w-12 bg-gray-50 border-r border-gray-200 flex flex-col">
+        <button
+          onClick={handleToggleCollapse}
+          className="p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+          title="Expand sidebar"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        {/* Indicator for active session */}
+        <div className="px-2 py-1">
+          <div className={`w-2 h-2 rounded-full ${
+            activeSessionId === null ? 'bg-indigo-600' : 'bg-gray-300'
+          }`} title="Current feed"></div>
+        </div>
+
+        {sessions.slice(0, 5).map((session) => (
+          <div key={session.id} className="px-2 py-1">
+            <div className={`w-2 h-2 rounded-full ${
+              activeSessionId === session.id ? 'bg-indigo-600' : 'bg-gray-300'
+            }`} title={session.title}></div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Feed History</h2>
+          <button
+            onClick={handleToggleCollapse}
+            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            title="Collapse sidebar"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Current Feed */}
+      <div
+        onClick={handleCurrentFeedClick}
+        className={`p-4 border-b border-gray-200 cursor-pointer transition-colors ${
+          activeSessionId === null
+            ? 'bg-indigo-50 border-indigo-200'
+            : 'bg-white hover:bg-gray-50'
+        }`}
+      >
+        <div className="flex items-center space-x-3">
+          <div className={`flex-shrink-0 ${
+            activeSessionId === null ? 'text-indigo-600' : 'text-gray-400'
+          }`}>
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className={`text-sm font-medium ${
+              activeSessionId === null ? 'text-indigo-900' : 'text-gray-900'
+            }`}>
+              Current Feed
+            </h3>
+            <p className="text-xs text-gray-500">Latest generated content</p>
+          </div>
+        </div>
+        {activeSessionId === null && (
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600"></div>
+        )}
+      </div>
+
+      {/* Session List */}
+      <div className="flex-1 overflow-y-auto">
+        {isLoading ? (
+          <div className="p-4 text-center text-gray-500">
+            <div className="animate-spin mx-auto h-6 w-6 border-2 border-gray-300 border-t-indigo-600 rounded-full mb-2" />
+            Loading history...
+          </div>
+        ) : sessions.length === 0 ? (
+          <div className="p-4 text-center text-gray-500">
+            <svg className="mx-auto h-12 w-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p className="text-sm">No feed history yet</p>
+            <p className="text-xs text-gray-400 mt-1">Previous feeds will appear here</p>
+          </div>
+        ) : (
+          <div className="bg-white">
+            {sessions.map((session) => (
+              <FeedHistoryItem
+                key={session.id}
+                session={session}
+                isActive={activeSessionId === session.id}
+                onClick={handleSessionClick}
+                onDelete={handleSessionDelete}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer with session count */}
+      {sessions.length > 0 && (
+        <div className="p-3 border-t border-gray-200 bg-white">
+          <p className="text-xs text-gray-500 text-center">
+            {sessions.length} saved {sessions.length === 1 ? 'session' : 'sessions'}
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}

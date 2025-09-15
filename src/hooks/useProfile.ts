@@ -82,8 +82,36 @@ export function useProfile() {
 
       console.log('Starting feed generation for user:', session.user.id)
 
+      // Create feed session record
+      const sessionTitle = `Feed Refresh - ${new Date().toLocaleDateString('en-AU', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`
+
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('feed_sessions')
+        .insert({
+          user_id: session.user.id,
+          title: sessionTitle,
+          search_type: 'refresh',
+          preferences: preferences || null
+        })
+        .select()
+        .single()
+
+      if (sessionError) {
+        console.error('Failed to create feed session:', sessionError)
+        throw new Error('Failed to create feed session')
+      }
+
       const response = await supabase.functions.invoke('generate-feed', {
-        body: preferences ? { preferences } : {},
+        body: {
+          preferences: preferences || undefined,
+          sessionId: sessionData.id
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -96,7 +124,10 @@ export function useProfile() {
       }
 
       console.log('Feed generation completed successfully')
-      return response.data
+      return {
+        ...response.data,
+        sessionId: sessionData.id
+      }
     } catch (err) {
       console.error('Feed generation failed:', err)
       setError(err instanceof Error ? err.message : 'Failed to generate feed')
@@ -125,8 +156,35 @@ export function useProfile() {
 
       console.log('Starting keyword search for user:', session.user.id, 'Keywords:', keywords)
 
+      // Create feed session record for keyword search
+      const sessionTitle = `Keyword Search: "${keywords.slice(0, 30)}${keywords.length > 30 ? '...' : ''}" - ${new Date().toLocaleDateString('en-AU', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`
+
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('feed_sessions')
+        .insert({
+          user_id: session.user.id,
+          title: sessionTitle,
+          search_type: 'keyword_search',
+          preferences: { keywords, categories: {} }
+        })
+        .select()
+        .single()
+
+      if (sessionError) {
+        console.error('Failed to create keyword search session:', sessionError)
+        throw new Error('Failed to create keyword search session')
+      }
+
       const response = await supabase.functions.invoke('keyword-search', {
-        body: { keywords },
+        body: {
+          keywords,
+          sessionId: sessionData.id
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -139,7 +197,10 @@ export function useProfile() {
       }
 
       console.log('Keyword search completed successfully')
-      return response.data
+      return {
+        ...response.data,
+        sessionId: sessionData.id
+      }
     } catch (err) {
       console.error('Keyword search failed:', err)
       setError(err instanceof Error ? err.message : 'Failed to perform keyword search')
