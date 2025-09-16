@@ -73,35 +73,6 @@ export default function FeedSidebar({
     }
   }
 
-  const handleSessionDelete = async (sessionId: number) => {
-    try {
-      const { error } = await supabase
-        .from('feed_sessions')
-        .delete()
-        .eq('id', sessionId)
-
-      if (error) {
-        console.error('Failed to delete session:', error)
-        return
-      }
-
-      // Remove from local state
-      setSessions(prev => prev.filter(s => s.id !== sessionId))
-
-      // If we deleted the active session, switch to latest remaining session
-      if (activeSessionId === sessionId) {
-        const remainingSessions = sessions.filter(s => s.id !== sessionId)
-        if (remainingSessions.length > 0) {
-          onSessionChange(remainingSessions[0].id)
-        }
-      }
-
-      tracking.trackEvent('feed_session_deleted_success', { session_id: sessionId })
-    } catch (err) {
-      console.error('Failed to delete session:', err)
-      tracking.trackError('feed_session_delete_failed', err instanceof Error ? err.message : 'Unknown delete error')
-    }
-  }
 
   const handleFavouritesClick = () => {
     onFavouritesToggle()
@@ -233,7 +204,6 @@ export default function FeedSidebar({
                   session={session}
                   isActive={activeSessionId === session.id}
                   onClick={handleSessionClick}
-                  onDelete={handleSessionDelete}
                 />
               ))}
             </div>
