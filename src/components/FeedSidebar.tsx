@@ -8,7 +8,7 @@ import FeedHistoryItem from './FeedHistoryItem'
 
 interface FeedSidebarProps {
   activeSessionId: number | null
-  onSessionChange: (sessionId: number | null) => void
+  onSessionChange: (sessionId: number) => void
   isCollapsed: boolean
   onToggleCollapse: () => void
   showFavourites: boolean
@@ -88,9 +88,12 @@ export default function FeedSidebar({
       // Remove from local state
       setSessions(prev => prev.filter(s => s.id !== sessionId))
 
-      // If we deleted the active session, switch to current feed
+      // If we deleted the active session, switch to latest remaining session
       if (activeSessionId === sessionId) {
-        onSessionChange(null)
+        const remainingSessions = sessions.filter(s => s.id !== sessionId)
+        if (remainingSessions.length > 0) {
+          onSessionChange(remainingSessions[0].id)
+        }
       }
 
       tracking.trackEvent('feed_session_deleted_success', { session_id: sessionId })
@@ -176,42 +179,6 @@ export default function FeedSidebar({
           </div>
         </div>
 
-        {/* Current Feed */}
-        <div
-          onClick={() => {
-            onSessionChange(null)
-            // Auto-close sidebar on mobile after current feed selection
-            if (window.innerWidth < 768) {
-              onToggleCollapse()
-            }
-          }}
-          className={`relative p-4 border-b border-gray-200 cursor-pointer transition-colors min-h-[60px] flex items-center ${
-            activeSessionId === null && !showFavourites
-              ? 'bg-indigo-50 border-indigo-200'
-              : 'bg-white hover:bg-gray-50'
-          }`}
-        >
-          <div className="flex items-center space-x-3">
-            <div className={`flex-shrink-0 ${activeSessionId === null && !showFavourites ? 'text-indigo-600' : 'text-gray-500'}`}>
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m8 5l4-4 4 4" />
-              </svg>
-            </div>
-            <div>
-              <h3 className={`text-sm font-medium ${
-                activeSessionId === null && !showFavourites ? 'text-indigo-900' : 'text-gray-900'
-              }`}>
-                Current Feed
-              </h3>
-              <p className="text-xs text-gray-500">Latest generated content</p>
-            </div>
-          </div>
-          {/* Active indicator */}
-          {activeSessionId === null && !showFavourites && (
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600"></div>
-          )}
-        </div>
 
         {/* Favourites */}
         <div

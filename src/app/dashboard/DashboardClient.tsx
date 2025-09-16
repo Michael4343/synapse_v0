@@ -215,33 +215,30 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
     }
   }
 
-  const handleSessionChange = (sessionId: number | null) => {
+  const handleSessionChange = (sessionId: number) => {
     setActiveSessionId(sessionId)
     setSessionLoadError(null)
     setShowFavourites(false) // Reset favourites view when switching sessions
-    if (sessionId) {
-      loadSessionFeedItems(sessionId)
-    } else {
-      // Reset to current feed
-      setSessionFeedItems([])
-      setSessionGroupedItems({})
-      setIsLoadingSession(false)
-    }
+    loadSessionFeedItems(sessionId)
   }
 
   const handleFavouritesToggle = () => {
     const newShowFavourites = !showFavourites
     setShowFavourites(newShowFavourites)
-    setActiveSessionId(null) // Reset session view when viewing favourites
 
     if (newShowFavourites) {
+      setActiveSessionId(null) // Reset session view when viewing favourites
       loadFavouriteItems()
     } else {
-      // Reset favourites view
+      // Reset favourites view and return to latest session
       setFavouriteFeedItems([])
       setFavouriteGroupedItems({})
       setIsLoadingSession(false)
       setSessionLoadError(null)
+      // Auto-load latest session when leaving favourites view
+      if (!activeSessionId) {
+        // Need to get latest session from the sidebar - this will be handled by the sidebar's auto-selection
+      }
     }
 
     tracking.trackEvent('favourites_view_toggled', {
@@ -291,14 +288,10 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
   // Determine which feed data to display
   const displayFeedItems = showFavourites
     ? favouriteFeedItems
-    : activeSessionId
-      ? sessionFeedItems
-      : (feedItems || [])
+    : sessionFeedItems
   const displayGroupedItems = showFavourites
     ? favouriteGroupedItems
-    : activeSessionId
-      ? sessionGroupedItems
-      : groupedItems
+    : sessionGroupedItems
 
   return (
     <>
@@ -344,11 +337,6 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                         <p className="text-sm text-gray-500 mt-1">
                           Welcome, {user.email}
                         </p>
-                        {activeSessionId && (
-                          <p className="text-xs text-indigo-600 mt-1">
-                            Viewing previous session
-                          </p>
-                        )}
                         {showFavourites && (
                           <p className="text-xs text-yellow-600 mt-1">
                             Viewing favourites
@@ -389,11 +377,6 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                         <p className="text-sm text-gray-500">
                           Welcome, {user.email}
                         </p>
-                        {activeSessionId && (
-                          <p className="text-xs text-indigo-600">
-                            Viewing previous session
-                          </p>
-                        )}
                         {showFavourites && (
                           <p className="text-xs text-yellow-600">
                             Viewing favourites
@@ -437,11 +420,6 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                       <h2 className="text-xl font-semibold text-gray-900">
                         {showFavourites ? 'Favourite Items' : 'Research Feed'}
                       </h2>
-                      {activeSessionId && (
-                        <span className="ml-3 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                          Previous Session
-                        </span>
-                      )}
                       {showFavourites && (
                         <span className="ml-3 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
                           Favourites
@@ -511,20 +489,16 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                         <h3 className="text-lg font-medium text-gray-900 mb-2">
                           {showFavourites
                             ? 'No favourite items yet'
-                            : activeSessionId
-                              ? 'No items in this session'
-                              : 'No feed items yet'
+                            : 'No feed items yet'
                           }
                         </h3>
                         <p className="text-gray-500 mb-4">
                           {showFavourites
                             ? 'Items you favourite will appear here. Click the star icon on any feed item to add it to your favourites.'
-                            : activeSessionId
-                              ? 'This session appears to be empty.'
-                              : 'Your personalised feed will appear here once generated.'
+                            : 'Your personalised feed will appear here once generated.'
                           }
                         </p>
-                        {!activeSessionId && !showFavourites && <RefreshFeedButton />}
+                        {!showFavourites && <RefreshFeedButton />}
                       </div>
                     )}
                   </div>
