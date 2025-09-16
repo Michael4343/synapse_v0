@@ -27,7 +27,9 @@
       "Bash(npm run typecheck:*)",
       "WebFetch(domain:posthog.com)",
       "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
-      "Bash(supabase link:*)"
+      "Bash(supabase link:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:supabase.com)"
     ],
     "deny": [],
     "ask": []

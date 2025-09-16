@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { usePostHog } from '@/providers/PostHogProvider'
 
@@ -8,9 +8,15 @@ export function PageviewTracker() {
   const pathname = usePathname()
   const posthog = usePostHog()
   const lastTrackedPath = useRef<string | null>(null)
+  const [isClient, setIsClient] = useState(false)
+
+  // Ensure this only runs on client side after hydration
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
-    if (pathname && posthog && pathname !== lastTrackedPath.current) {
+    if (isClient && pathname && posthog && pathname !== lastTrackedPath.current) {
       // Capture pageview with page type information
       posthog.capture('$pageview', {
         $current_url: window.location.href,
@@ -18,7 +24,7 @@ export function PageviewTracker() {
       })
       lastTrackedPath.current = pathname
     }
-  }, [pathname, posthog])
+  }, [isClient, pathname, posthog])
 
   return null // This component doesn't render anything
 }

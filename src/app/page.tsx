@@ -5,13 +5,13 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import { login, signup } from './login/actions'
+import { login, signup, resetPassword } from './login/actions'
 import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 
 export default function Home() {
   const router = useRouter()
   const tracking = usePostHogTracking()
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signup')
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'forgot'>('signup')
   const [isLoading, setIsLoading] = useState(false)
   const [passwordMatch, setPasswordMatch] = useState(true)
   const [error, setError] = useState<string>('')
@@ -23,6 +23,18 @@ export default function Home() {
     const checkAuth = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
+
+      // Ensure we're on the client side before accessing window
+      if (typeof window === 'undefined') return
+
+      // Debug logging (remove in production)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Auth check:', {
+          hasUser: !!user,
+          currentPath: window.location.pathname,
+          searchParams: window.location.search,
+        })
+      }
 
       if (user) {
         router.push('/dashboard')
@@ -81,7 +93,7 @@ export default function Home() {
       } catch (error) {
         tracking.trackError('signup_failed', error instanceof Error ? error.message : 'Unknown signup error')
       }
-    } else {
+    } else if (activeTab === 'signin') {
       // Track login attempt
       tracking.trackUserLogin('email')
 
@@ -91,6 +103,17 @@ export default function Home() {
         // Track success (will happen on redirect to dashboard)
       } catch (error) {
         tracking.trackError('login_failed', error instanceof Error ? error.message : 'Unknown login error')
+      }
+    } else if (activeTab === 'forgot') {
+      // Track password reset attempt
+      const email = formData.get('email') as string
+      tracking.trackPasswordResetRequested(email)
+
+      try {
+        // Server action will handle redirect and success message
+        await resetPassword(formData)
+      } catch (error) {
+        tracking.trackError('password_reset_failed', error instanceof Error ? error.message : 'Unknown reset error')
       }
     }
 
@@ -176,41 +199,62 @@ export default function Home() {
             <div className="space-y-6">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {activeTab === 'signin' ? 'Welcome back' : 'Get started today'}
+                  {activeTab === 'signin' ? 'Welcome back' :
+                   activeTab === 'forgot' ? 'Reset Password' : 'Get started today'}
                 </h2>
                 <p className="text-gray-600">
                   {activeTab === 'signin'
                     ? 'Sign in to your account'
+                    : activeTab === 'forgot'
+                    ? 'Enter your email to receive a reset link'
                     : 'Create your personalised research feed'
                   }
                 </p>
               </div>
 
               {/* Tab Navigation */}
-              <div className="flex bg-gray-100 rounded-xl p-1">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('signup')}
-                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    activeTab === 'signup'
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Sign Up
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('signin')}
-                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    activeTab === 'signin'
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Sign In
-                </button>
-              </div>
+              {activeTab !== 'forgot' && (
+                <div className="flex bg-gray-100 rounded-xl p-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('signup')}
+                    className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      activeTab === 'signup'
+                        ? 'bg-white text-indigo-600 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Sign Up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('signin')}
+                    className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      activeTab === 'signin'
+                        ? 'bg-white text-indigo-600 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Sign In
+                  </button>
+                </div>
+              )}
+
+              {/* Back button for forgot password */}
+              {activeTab === 'forgot' && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('signin')}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to Sign In
+                  </button>
+                </div>
+              )}
 
               {/* Error/Success Messages */}
               {error && (
@@ -271,25 +315,38 @@ export default function Home() {
                     autoComplete="email"
                     required
                     className="block w-full rounded-lg border-gray-300 border px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Enter your email"
+                    placeholder={activeTab === 'forgot' ? 'Enter your email address' : 'Enter your email'}
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete={activeTab === 'signin' ? 'current-password' : 'new-password'}
-                    required
-                    minLength={6}
-                    className="block w-full rounded-lg border-gray-300 border px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder={activeTab === 'signin' ? 'Enter your password' : 'Create a password (min 6 characters)'}
-                  />
-                </div>
+                {activeTab !== 'forgot' && (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                        Password
+                      </label>
+                      {activeTab === 'signin' && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('forgot')}
+                          className="text-sm text-indigo-600 hover:text-indigo-500 focus:outline-none focus:underline"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete={activeTab === 'signin' ? 'current-password' : 'new-password'}
+                      required
+                      minLength={6}
+                      className="block w-full rounded-lg border-gray-300 border px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder={activeTab === 'signin' ? 'Enter your password' : 'Create a password (min 6 characters)'}
+                    />
+                  </div>
+                )}
 
                 {activeTab === 'signup' && (
                   <div>
@@ -320,7 +377,8 @@ export default function Home() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                   ) : null}
-                  {activeTab === 'signin' ? 'Sign In' : 'Create Account'}
+                  {activeTab === 'signin' ? 'Sign In' :
+                   activeTab === 'forgot' ? 'Send Reset Link' : 'Create Account'}
                 </button>
               </form>
 

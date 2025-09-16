@@ -3,6 +3,9 @@
 import { useCallback } from 'react'
 import { usePostHog } from '@/providers/PostHogProvider'
 
+// Helper to safely get current URL (prevents hydration issues)
+const getCurrentUrl = () => typeof window !== 'undefined' ? window.location.href : ''
+
 export function usePostHogTracking() {
   const posthog = usePostHog()
 
@@ -10,7 +13,7 @@ export function usePostHogTracking() {
   const trackUserSignup = useCallback((method: 'email' | 'google' = 'email') => {
     posthog?.capture('user_signup_attempted', {
       signup_method: method,
-      page_url: window.location.href,
+      page_url: getCurrentUrl(),
     })
   }, [posthog])
 
@@ -25,7 +28,7 @@ export function usePostHogTracking() {
   const trackUserLogin = useCallback((method: 'email' | 'google' = 'email') => {
     posthog?.capture('user_login_attempted', {
       login_method: method,
-      page_url: window.location.href,
+      page_url: getCurrentUrl(),
     })
   }, [posthog])
 
@@ -40,6 +43,26 @@ export function usePostHogTracking() {
   const trackUserLogout = useCallback(() => {
     posthog?.capture('user_logout_completed')
     posthog?.reset()
+  }, [posthog])
+
+  // Password reset tracking
+  const trackPasswordResetRequested = useCallback((email: string) => {
+    posthog?.capture('password_reset_requested', {
+      email_domain: email.split('@')[1] || 'unknown',
+      page_url: getCurrentUrl(),
+    })
+  }, [posthog])
+
+  const trackPasswordResetSubmitted = useCallback(() => {
+    posthog?.capture('password_reset_submitted', {
+      page_url: getCurrentUrl(),
+    })
+  }, [posthog])
+
+  const trackPasswordResetCompleted = useCallback(() => {
+    posthog?.capture('password_reset_completed', {
+      page_url: getCurrentUrl(),
+    })
   }, [posthog])
 
   // Onboarding tracking - stabilized with useCallback
@@ -148,7 +171,7 @@ export function usePostHogTracking() {
     posthog?.capture('error_occurred', {
       error_type: errorType,
       error_message: errorMessage,
-      page_url: window.location.href,
+      page_url: getCurrentUrl(),
       ...context,
     })
   }, [posthog])
@@ -156,7 +179,7 @@ export function usePostHogTracking() {
   // Generic event tracking - stabilized with useCallback
   const trackEvent = useCallback((eventName: string, properties?: Record<string, any>) => {
     posthog?.capture(eventName, {
-      page_url: window.location.href,
+      page_url: getCurrentUrl(),
       ...properties,
     })
   }, [posthog])
@@ -168,6 +191,11 @@ export function usePostHogTracking() {
     trackUserLogin,
     trackUserLoginSuccess,
     trackUserLogout,
+
+    // Password Reset
+    trackPasswordResetRequested,
+    trackPasswordResetSubmitted,
+    trackPasswordResetCompleted,
 
     // Onboarding
     trackOnboardingStarted,

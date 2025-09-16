@@ -3,15 +3,6 @@
 import { useState, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 
-interface FeedPreferences {
-  keywords: string
-  categories: {
-    publications: boolean
-    patents: boolean
-    funding_opportunities: boolean
-    trending_science_news: boolean
-  }
-}
 
 export function useProfile() {
   const [isGeneratingProfile, setIsGeneratingProfile] = useState(false)
@@ -63,7 +54,7 @@ export function useProfile() {
     }
   }, [isGeneratingProfile, supabase])
 
-  const generateFeed = useCallback(async (preferences?: FeedPreferences) => {
+  const generateFeed = useCallback(async () => {
     // Prevent multiple simultaneous calls
     if (isGeneratingFeed) {
       console.log('Feed generation already in progress, skipping...')
@@ -97,7 +88,7 @@ export function useProfile() {
           user_id: session.user.id,
           title: sessionTitle,
           search_type: 'refresh',
-          preferences: preferences || null
+          preferences: null
         })
         .select()
         .single()
@@ -111,7 +102,6 @@ export function useProfile() {
 
       const response = await supabase.functions.invoke('generate-feed', {
         body: {
-          preferences: preferences || undefined,
           sessionId: sessionData.id
         },
         headers: {
