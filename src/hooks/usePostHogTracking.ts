@@ -1,22 +1,10 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
 import { usePostHog } from '@/providers/PostHogProvider'
-import { usePathname } from 'next/navigation'
 
 export function usePostHogTracking() {
   const posthog = usePostHog()
-  const pathname = usePathname()
-
-  // Track pageviews
-  useEffect(() => {
-    if (pathname && posthog) {
-      posthog.capture('$pageview', {
-        $current_url: window.location.href,
-        page_type: getPageType(pathname),
-      })
-    }
-  }, [pathname, posthog])
 
   // Authentication tracking - using useCallback to prevent object recreation
   const trackUserSignup = useCallback((method: 'email' | 'google' = 'email') => {
@@ -54,62 +42,62 @@ export function usePostHogTracking() {
     posthog?.reset()
   }, [posthog])
 
-  // Onboarding tracking
-  const trackOnboardingStarted = () => {
+  // Onboarding tracking - stabilized with useCallback
+  const trackOnboardingStarted = useCallback(() => {
     posthog?.capture('onboarding_started')
-  }
+  }, [posthog])
 
-  const trackUrlSubmitted = (url: string, urlType: string) => {
+  const trackUrlSubmitted = useCallback((url: string, urlType: string) => {
     posthog?.capture('onboarding_url_submitted', {
       submitted_url: url,
       url_type: urlType,
       url_domain: new URL(url).hostname,
     })
-  }
+  }, [posthog])
 
-  const trackProfileGenerationStarted = () => {
+  const trackProfileGenerationStarted = useCallback(() => {
     posthog?.capture('profile_generation_started')
-  }
+  }, [posthog])
 
-  const trackProfileGenerationCompleted = (durationMs: number, profileLength: number) => {
+  const trackProfileGenerationCompleted = useCallback((durationMs: number, profileLength: number) => {
     posthog?.capture('profile_generation_completed', {
       generation_duration_ms: durationMs,
       profile_text_length: profileLength,
     })
-  }
+  }, [posthog])
 
-  const trackOnboardingCompleted = () => {
+  const trackOnboardingCompleted = useCallback(() => {
     posthog?.capture('onboarding_completed')
-  }
+  }, [posthog])
 
-  // Dashboard tracking
-  const trackFeedRefreshClicked = () => {
+  // Dashboard tracking - stabilized with useCallback
+  const trackFeedRefreshClicked = useCallback(() => {
     posthog?.capture('feed_refresh_clicked')
-  }
+  }, [posthog])
 
-  const trackFeedRefreshCompleted = (itemCount: number, categories: string[], durationMs: number) => {
+  const trackFeedRefreshCompleted = useCallback((itemCount: number, categories: string[], durationMs: number) => {
     posthog?.capture('feed_refresh_completed', {
       feed_item_count: itemCount,
       feed_categories: categories,
       generation_duration_ms: durationMs,
     })
-  }
+  }, [posthog])
 
-  const trackFeedItemClicked = (itemId: string, itemType: string, title: string, source?: string) => {
+  const trackFeedItemClicked = useCallback((itemId: string, itemType: string, title: string, source?: string) => {
     posthog?.capture('feed_item_clicked', {
       item_id: itemId,
       item_type: itemType,
       item_title: title,
       item_source: source,
     })
-  }
+  }, [posthog])
 
-  const trackFeedItemExpanded = (itemId: string, itemType: string) => {
+  const trackFeedItemExpanded = useCallback((itemId: string, itemType: string) => {
     posthog?.capture('feed_item_expanded', {
       item_id: itemId,
       item_type: itemType,
     })
-  }
+  }, [posthog])
 
   const trackFeedCategoryInteraction = useCallback((categoryType: string, itemCount: number) => {
     posthog?.capture('feed_category_viewed', {
@@ -118,42 +106,42 @@ export function usePostHogTracking() {
     })
   }, [posthog])
 
-  // Research-specific tracking
-  const trackResearchDiscovery = (discoveryType: 'breakthrough_paper' | 'funding_opportunity' | 'collaboration_lead') => {
+  // Research-specific tracking - stabilized with useCallback
+  const trackResearchDiscovery = useCallback((discoveryType: 'breakthrough_paper' | 'funding_opportunity' | 'collaboration_lead') => {
     posthog?.capture('research_discovery_identified', {
       discovery_type: discoveryType,
     })
-  }
+  }, [posthog])
 
-  const trackContentEngagement = (engagementType: 'time_spent' | 'bookmark' | 'share', metadata?: Record<string, any>) => {
+  const trackContentEngagement = useCallback((engagementType: 'time_spent' | 'bookmark' | 'share', metadata?: Record<string, any>) => {
     posthog?.capture('content_engagement', {
       engagement_type: engagementType,
       ...metadata,
     })
-  }
+  }, [posthog])
 
-  // Favourites tracking
-  const trackItemFavourited = (itemId: string, itemType: string, itemTitle: string) => {
+  // Favourites tracking - stabilized with useCallback
+  const trackItemFavourited = useCallback((itemId: string, itemType: string, itemTitle: string) => {
     posthog?.capture('item_favourited', {
       item_id: itemId,
       item_type: itemType,
       item_title: itemTitle,
     })
-  }
+  }, [posthog])
 
-  const trackItemUnfavourited = (itemId: string, itemType: string, itemTitle: string) => {
+  const trackItemUnfavourited = useCallback((itemId: string, itemType: string, itemTitle: string) => {
     posthog?.capture('item_unfavourited', {
       item_id: itemId,
       item_type: itemType,
       item_title: itemTitle,
     })
-  }
+  }, [posthog])
 
-  const trackFavouritesViewed = (favouritesCount: number) => {
+  const trackFavouritesViewed = useCallback((favouritesCount: number) => {
     posthog?.capture('favourites_viewed', {
       favourites_count: favouritesCount,
     })
-  }
+  }, [posthog])
 
   // Error tracking - stabilized to prevent excessive calls
   const trackError = useCallback((errorType: string, errorMessage: string, context?: Record<string, any>) => {
@@ -165,13 +153,13 @@ export function usePostHogTracking() {
     })
   }, [posthog])
 
-  // Generic event tracking
-  const trackEvent = (eventName: string, properties?: Record<string, any>) => {
+  // Generic event tracking - stabilized with useCallback
+  const trackEvent = useCallback((eventName: string, properties?: Record<string, any>) => {
     posthog?.capture(eventName, {
       page_url: window.location.href,
       ...properties,
     })
-  }
+  }, [posthog])
 
   return {
     // Authentication
@@ -212,14 +200,3 @@ export function usePostHogTracking() {
   }
 }
 
-// Helper function to determine page type from pathname
-function getPageType(pathname: string): string {
-  if (pathname === '/') return 'landing'
-  if (pathname === '/login') return 'authentication'
-  if (pathname === '/dashboard') return 'dashboard'
-  if (pathname.startsWith('/onboarding')) {
-    if (pathname.includes('processing')) return 'onboarding_processing'
-    return 'onboarding'
-  }
-  return 'unknown'
-}

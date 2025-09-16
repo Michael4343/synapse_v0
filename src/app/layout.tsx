@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { PostHogProvider } from '@/providers/PostHogProvider'
+import { PageviewTracker } from '@/components/PageviewTracker'
 import './globals.css'
 
 // Use system fonts in development for maximum speed
@@ -19,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="font-system">
         <PostHogProvider>
+          <PageviewTracker />
           {children}
         </PostHogProvider>
       </body>

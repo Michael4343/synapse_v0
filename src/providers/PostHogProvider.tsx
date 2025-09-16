@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useEffect, ReactNode, useMemo } from 'react'
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 
@@ -19,8 +19,8 @@ export function PostHogProvider({ children }: { children: ReactNode }) {
       if (posthogKey && posthogHost) {
         posthog.init(posthogKey, {
           api_host: posthogHost,
-          defaults: '2025-05-24', // Latest 2025 configuration defaults
-          capture_pageview: false, // We'll manually capture pageviews for better control
+          capture_pageview: false, // Disable automatic pageview - we'll handle manually
+          capture_pageleave: true, // Keep page leave tracking
           session_recording: {
             maskAllInputs: false, // Full recording for prototype insights
             recordCrossOriginIframes: true,
@@ -46,8 +46,11 @@ export function PostHogProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Memoize the context value to prevent recreation on every render
+  const contextValue = useMemo(() => ({ posthog }), [])
+
   return (
-    <PostHogContext.Provider value={{ posthog }}>
+    <PostHogContext.Provider value={contextValue}>
       <PHProvider client={posthog}>
         {children}
       </PHProvider>

@@ -20,7 +20,7 @@ export default function Onboarding() {
 
   useEffect(() => {
     tracking.trackOnboardingStarted()
-  }, [tracking])
+  }, [])
 
   const calculateProgress = () => {
     const fields = [linkedin, scholar, company, website, orcid, keywords]

@@ -120,7 +120,7 @@ export function useFavourites(): UseFavouritesReturn {
       tracking.trackError('favourite_toggle_error', err instanceof Error ? err.message : 'Unknown error')
       return false
     }
-  }, [favourites, supabase, tracking])
+  }, [favourites, supabase])
 
   const getFavouritedItems = useCallback(async (): Promise<FeedItem[]> => {
     try {
@@ -166,7 +166,7 @@ export function useFavourites(): UseFavouritesReturn {
       tracking.trackError('favourited_items_load_error', err instanceof Error ? err.message : 'Unknown error')
       return []
     }
-  }, [supabase, tracking])
+  }, [supabase])
 
   // Load favourites on hook initialization
   useEffect(() => {

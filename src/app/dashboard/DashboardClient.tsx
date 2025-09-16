@@ -94,7 +94,7 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
         window.sessionStorage.removeItem('just_logged_in')
       }
     }
-  }, [user, tracking])
+  }, [user])
 
   // Separate useEffect for feed category tracking to prevent excessive events
   useEffect(() => {
