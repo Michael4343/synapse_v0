@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 import { useProfile } from '@/hooks/useProfile'
+import { useFavourites } from '@/hooks/useFavourites'
 import { createClient } from '@/utils/supabase/client'
 import { FeedItem as FeedItemType } from '@/types/database'
 import KeywordSearchModal from '@/components/KeywordSearchModal'
@@ -21,6 +22,7 @@ interface DashboardClientProps {
 export default function DashboardClient({ user, feedItems, groupedItems, children }: DashboardClientProps) {
   const tracking = usePostHogTracking()
   const { keywordSearch, isGeneratingFeed } = useProfile()
+  const { getFavouritedItems } = useFavourites()
   const router = useRouter()
   const [showKeywordSearch, setShowKeywordSearch] = useState(false)
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null)
@@ -28,6 +30,9 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
   const [sessionGroupedItems, setSessionGroupedItems] = useState<Record<string, FeedItemType[]>>({})
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [showFavourites, setShowFavourites] = useState(false)
+  const [favouriteFeedItems, setFavouriteFeedItems] = useState<FeedItemType[]>([])
+  const [favouriteGroupedItems, setFavouriteGroupedItems] = useState<Record<string, FeedItemType[]>>({})
 
   // Check for mobile screen size
   useEffect(() => {
@@ -47,6 +52,36 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
   const [sessionLoadError, setSessionLoadError] = useState<string | null>(null)
 
   const supabase = createClient()
+
+  const loadFavouriteItems = async () => {
+    try {
+      setIsLoadingSession(true)
+      setSessionLoadError(null)
+
+      const favouritedItems = await getFavouritedItems()
+      setFavouriteFeedItems(favouritedItems)
+
+      // Group favourite items by type
+      const grouped = favouritedItems.reduce((acc, item) => {
+        const type = item.item_type
+        if (!acc[type]) {
+          acc[type] = []
+        }
+        acc[type].push(item)
+        return acc
+      }, {} as Record<string, FeedItemType[]>)
+
+      setFavouriteGroupedItems(grouped)
+
+      tracking.trackFavouritesViewed(favouritedItems.length)
+    } catch (err) {
+      console.error('Failed to load favourite items:', err)
+      setSessionLoadError('Failed to load favourites')
+      tracking.trackError('favourites_load_failed', err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setIsLoadingSession(false)
+    }
+  }
 
   useEffect(() => {
     if (user) {
@@ -181,6 +216,7 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
   const handleSessionChange = (sessionId: number | null) => {
     setActiveSessionId(sessionId)
     setSessionLoadError(null)
+    setShowFavourites(false) // Reset favourites view when switching sessions
     if (sessionId) {
       loadSessionFeedItems(sessionId)
     } else {
@@ -189,6 +225,26 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
       setSessionGroupedItems({})
       setIsLoadingSession(false)
     }
+  }
+
+  const handleFavouritesToggle = () => {
+    const newShowFavourites = !showFavourites
+    setShowFavourites(newShowFavourites)
+    setActiveSessionId(null) // Reset session view when viewing favourites
+
+    if (newShowFavourites) {
+      loadFavouriteItems()
+    } else {
+      // Reset favourites view
+      setFavouriteFeedItems([])
+      setFavouriteGroupedItems({})
+      setIsLoadingSession(false)
+      setSessionLoadError(null)
+    }
+
+    tracking.trackEvent('favourites_view_toggled', {
+      showing_favourites: newShowFavourites
+    })
   }
 
   const handleToggleSidebar = () => {
@@ -231,8 +287,16 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
   }
 
   // Determine which feed data to display
-  const displayFeedItems = activeSessionId ? sessionFeedItems : (feedItems || [])
-  const displayGroupedItems = activeSessionId ? sessionGroupedItems : groupedItems
+  const displayFeedItems = showFavourites
+    ? favouriteFeedItems
+    : activeSessionId
+      ? sessionFeedItems
+      : (feedItems || [])
+  const displayGroupedItems = showFavourites
+    ? favouriteGroupedItems
+    : activeSessionId
+      ? sessionGroupedItems
+      : groupedItems
 
   return (
     <>
@@ -243,6 +307,8 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
           onSessionChange={handleSessionChange}
           isCollapsed={sidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
+          showFavourites={showFavourites}
+          onFavouritesToggle={handleFavouritesToggle}
         />
 
         {/* Main Content */}
@@ -279,6 +345,11 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                         {activeSessionId && (
                           <p className="text-xs text-indigo-600 mt-1">
                             Viewing previous session
+                          </p>
+                        )}
+                        {showFavourites && (
+                          <p className="text-xs text-yellow-600 mt-1">
+                            Viewing favourites
                           </p>
                         )}
                       </div>
@@ -321,6 +392,11 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                             Viewing previous session
                           </p>
                         )}
+                        {showFavourites && (
+                          <p className="text-xs text-yellow-600">
+                            Viewing favourites
+                          </p>
+                        )}
                       </div>
 
                       {/* Buttons row */}
@@ -357,11 +433,16 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                   <div className="mb-8">
                     <div className="flex items-center mb-4">
                       <h2 className="text-xl font-semibold text-gray-900">
-                        Research Feed
+                        {showFavourites ? 'Favourite Items' : 'Research Feed'}
                       </h2>
                       {activeSessionId && (
                         <span className="ml-3 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                           Previous Session
+                        </span>
+                      )}
+                      {showFavourites && (
+                        <span className="ml-3 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                          Favourites
                         </span>
                       )}
                     </div>
@@ -426,15 +507,22 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                     ) : (
                       <div className="text-center py-12">
                         <h3 className="text-lg font-medium text-gray-900 mb-2">
-                          {activeSessionId ? 'No items in this session' : 'No feed items yet'}
+                          {showFavourites
+                            ? 'No favourite items yet'
+                            : activeSessionId
+                              ? 'No items in this session'
+                              : 'No feed items yet'
+                          }
                         </h3>
                         <p className="text-gray-500 mb-4">
-                          {activeSessionId
-                            ? 'This session appears to be empty.'
-                            : 'Your personalised feed will appear here once generated.'
+                          {showFavourites
+                            ? 'Items you favourite will appear here. Click the star icon on any feed item to add it to your favourites.'
+                            : activeSessionId
+                              ? 'This session appears to be empty.'
+                              : 'Your personalised feed will appear here once generated.'
                           }
                         </p>
-                        {!activeSessionId && <RefreshFeedButton />}
+                        {!activeSessionId && !showFavourites && <RefreshFeedButton />}
                       </div>
                     )}
                   </div>

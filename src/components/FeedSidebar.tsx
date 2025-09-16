@@ -11,13 +11,17 @@ interface FeedSidebarProps {
   onSessionChange: (sessionId: number | null) => void
   isCollapsed: boolean
   onToggleCollapse: () => void
+  showFavourites: boolean
+  onFavouritesToggle: () => void
 }
 
 export default function FeedSidebar({
   activeSessionId,
   onSessionChange,
   isCollapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  showFavourites,
+  onFavouritesToggle
 }: FeedSidebarProps) {
   const [sessions, setSessions] = useState<FeedSession[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -97,8 +101,12 @@ export default function FeedSidebar({
   }
 
   const handleFavouritesClick = () => {
-    // TODO: Implement favourites functionality
+    onFavouritesToggle()
     tracking.trackEvent('favourites_clicked')
+    // Auto-close sidebar on mobile after favourites selection
+    if (window.innerWidth < 768) {
+      onToggleCollapse()
+    }
   }
 
   const handleToggleCollapse = () => {
@@ -178,13 +186,13 @@ export default function FeedSidebar({
             }
           }}
           className={`relative p-4 border-b border-gray-200 cursor-pointer transition-colors min-h-[60px] flex items-center ${
-            activeSessionId === null
+            activeSessionId === null && !showFavourites
               ? 'bg-indigo-50 border-indigo-200'
               : 'bg-white hover:bg-gray-50'
           }`}
         >
           <div className="flex items-center space-x-3">
-            <div className={`flex-shrink-0 ${activeSessionId === null ? 'text-indigo-600' : 'text-gray-500'}`}>
+            <div className={`flex-shrink-0 ${activeSessionId === null && !showFavourites ? 'text-indigo-600' : 'text-gray-500'}`}>
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m8 5l4-4 4 4" />
@@ -192,7 +200,7 @@ export default function FeedSidebar({
             </div>
             <div>
               <h3 className={`text-sm font-medium ${
-                activeSessionId === null ? 'text-indigo-900' : 'text-gray-900'
+                activeSessionId === null && !showFavourites ? 'text-indigo-900' : 'text-gray-900'
               }`}>
                 Current Feed
               </h3>
@@ -200,7 +208,7 @@ export default function FeedSidebar({
             </div>
           </div>
           {/* Active indicator */}
-          {activeSessionId === null && (
+          {activeSessionId === null && !showFavourites && (
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600"></div>
           )}
         </div>
@@ -208,21 +216,31 @@ export default function FeedSidebar({
         {/* Favourites */}
         <div
           onClick={handleFavouritesClick}
-          className="p-4 border-b border-gray-200 cursor-pointer transition-colors bg-white hover:bg-gray-50 min-h-[60px] flex items-center"
+          className={`relative p-4 border-b border-gray-200 cursor-pointer transition-colors min-h-[60px] flex items-center ${
+            showFavourites
+              ? 'bg-yellow-50 border-yellow-200'
+              : 'bg-white hover:bg-gray-50'
+          }`}
         >
           <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0 text-yellow-500">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className={`flex-shrink-0 ${showFavourites ? 'text-yellow-600' : 'text-yellow-500'}`}>
+              <svg className="h-6 w-6" fill={showFavourites ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-900">
+              <h3 className={`text-sm font-medium ${
+                showFavourites ? 'text-yellow-900' : 'text-gray-900'
+              }`}>
                 Favourites
               </h3>
-              <p className="text-xs text-gray-500">Coming soon</p>
+              <p className="text-xs text-gray-500">Your saved items</p>
             </div>
           </div>
+          {/* Active indicator */}
+          {showFavourites && (
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-yellow-600"></div>
+          )}
         </div>
 
         {/* Session List */}

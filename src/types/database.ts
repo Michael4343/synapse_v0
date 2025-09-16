@@ -108,6 +108,26 @@ export interface Database {
           created_at?: string
         }
       }
+      user_favourites: {
+        Row: {
+          id: number
+          user_id: string
+          feed_item_id: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          feed_item_id: number
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          feed_item_id?: number
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -125,3 +145,4 @@ export type Profile = Database['public']['Tables']['profiles']['Row']
 export type SubmittedUrl = Database['public']['Tables']['submitted_urls']['Row']
 export type FeedItem = Database['public']['Tables']['feed_items']['Row']
 export type FeedSession = Database['public']['Tables']['feed_sessions']['Row']
+export type UserFavourite = Database['public']['Tables']['user_favourites']['Row']

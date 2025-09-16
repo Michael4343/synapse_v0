@@ -132,6 +132,29 @@ export function usePostHogTracking() {
     })
   }
 
+  // Favourites tracking
+  const trackItemFavourited = (itemId: string, itemType: string, itemTitle: string) => {
+    posthog?.capture('item_favourited', {
+      item_id: itemId,
+      item_type: itemType,
+      item_title: itemTitle,
+    })
+  }
+
+  const trackItemUnfavourited = (itemId: string, itemType: string, itemTitle: string) => {
+    posthog?.capture('item_unfavourited', {
+      item_id: itemId,
+      item_type: itemType,
+      item_title: itemTitle,
+    })
+  }
+
+  const trackFavouritesViewed = (favouritesCount: number) => {
+    posthog?.capture('favourites_viewed', {
+      favourites_count: favouritesCount,
+    })
+  }
+
   // Error tracking
   const trackError = (errorType: string, errorMessage: string, context?: Record<string, any>) => {
     posthog?.capture('error_occurred', {
@@ -175,6 +198,11 @@ export function usePostHogTracking() {
     // Research
     trackResearchDiscovery,
     trackContentEngagement,
+
+    // Favourites
+    trackItemFavourited,
+    trackItemUnfavourited,
+    trackFavouritesViewed,
 
     // Errors
     trackError,
