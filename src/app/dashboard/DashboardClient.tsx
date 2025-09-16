@@ -27,6 +27,22 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
   const [sessionFeedItems, setSessionFeedItems] = useState<FeedItemType[]>([])
   const [sessionGroupedItems, setSessionGroupedItems] = useState<Record<string, FeedItemType[]>>({})
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Check for mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+      // Auto-collapse sidebar on mobile
+      if (window.innerWidth < 768) {
+        setSidebarCollapsed(true)
+      }
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   const [isLoadingSession, setIsLoadingSession] = useState(false)
   const [sessionLoadError, setSessionLoadError] = useState<string | null>(null)
 
@@ -231,49 +247,109 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden">
-          <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div className="px-4 py-6 sm:px-0">
+          <div className="max-w-7xl mx-auto py-3 md:py-6 px-4 sm:px-6 lg:px-8">
+            <div className="md:px-0">
               <div className="border-4 border-dashed border-gray-200 rounded-lg">
-                <div className="p-6">
-                  {/* Header with dual search options */}
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <h1 className="text-3xl font-bold text-gray-900">
-                        Your Research Dashboard
-                      </h1>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Welcome, {user.email}
-                      </p>
-                      {activeSessionId && (
-                        <p className="text-xs text-indigo-600 mt-1">
-                          Viewing previous session
-                        </p>
-                      )}
+                <div className="p-3 md:p-6">
+                  {/* Header with responsive layout */}
+                  <div className="mb-6">
+                    {/* Mobile hamburger and title */}
+                    <div className="flex items-center justify-between mb-4 md:hidden">
+                      <button
+                        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
+                      >
+                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                      </button>
+                      <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+                      <div className="w-10"></div> {/* Spacer for centering */}
                     </div>
-                    <div className="flex items-center space-x-3">
-                      {/* Search Button */}
-                      <button
-                        onClick={handleKeywordSearchOpen}
-                        className="inline-flex items-center px-4 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                      >
-                        <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        Search
-                      </button>
 
-                      {/* Add Source Button */}
-                      <button
-                        onClick={handleAddSource}
-                        className="inline-flex items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                      >
-                        <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        Add Source
-                      </button>
+                    {/* Desktop header */}
+                    <div className="hidden md:flex justify-between items-center mb-4">
+                      <div>
+                        <h1 className="text-3xl font-bold text-gray-900">
+                          Your Research Dashboard
+                        </h1>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Welcome, {user.email}
+                        </p>
+                        {activeSessionId && (
+                          <p className="text-xs text-indigo-600 mt-1">
+                            Viewing previous session
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        {/* Search Button */}
+                        <button
+                          onClick={handleKeywordSearchOpen}
+                          className="inline-flex items-center px-4 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                          <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          Search
+                        </button>
 
-                      {children}
+                        {/* Add Source Button */}
+                        <button
+                          onClick={handleAddSource}
+                          className="inline-flex items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                          <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          Add Source
+                        </button>
+
+                        {children}
+                      </div>
+                    </div>
+
+                    {/* Mobile action buttons */}
+                    <div className="flex flex-col space-y-3 md:hidden">
+                      {/* User info on mobile */}
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500">
+                          Welcome, {user.email}
+                        </p>
+                        {activeSessionId && (
+                          <p className="text-xs text-indigo-600">
+                            Viewing previous session
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Buttons row */}
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleKeywordSearchOpen}
+                          className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                          <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          Search
+                        </button>
+
+                        <button
+                          onClick={handleAddSource}
+                          className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                          <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          Add Source
+                        </button>
+                      </div>
+
+                      {/* Refresh button on mobile */}
+                      <div className="flex justify-center">
+                        {children}
+                      </div>
                     </div>
                   </div>
 
@@ -338,7 +414,7 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
                               <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
                                 {categoryName} ({typedItems.length})
                               </h3>
-                              <div className="grid gap-4 md:grid-cols-2">
+                              <div className="grid gap-4 lg:grid-cols-2">
                                 {typedItems.map((item) => (
                                   <FeedItem key={item.id} item={item} />
                                 ))}

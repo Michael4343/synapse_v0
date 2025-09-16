@@ -125,15 +125,15 @@ export default function FeedSettingsModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
             Feed Settings
           </h3>
           <button
             onClick={handleCancel}
-            className="text-gray-400 hover:text-gray-600"
+            className="p-1 text-gray-400 hover:text-gray-600"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -159,7 +159,7 @@ export default function FeedSettingsModal({
               placeholder="e.g., machine learning, CRISPR, quantum computing"
               value={preferences.keywords}
               onChange={handleKeywordsChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[44px]"
             />
             <p className="text-xs text-gray-500 mt-1">
               These keywords will be added to your profile to refine search results
@@ -173,14 +173,14 @@ export default function FeedSettingsModal({
             </label>
             <div className="space-y-2">
               {Object.entries(categoryLabels).map(([category, label]) => (
-                <label key={category} className="flex items-center">
+                <label key={category} className="flex items-center py-1">
                   <input
                     type="checkbox"
                     checked={preferences.categories[category as keyof FeedPreferences['categories']]}
                     onChange={() => handleCategoryChange(category as keyof FeedPreferences['categories'])}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
-                  <span className="ml-2 text-sm text-gray-700">{label}</span>
+                  <span className="ml-3 text-sm text-gray-700">{label}</span>
                 </label>
               ))}
             </div>
@@ -188,17 +188,17 @@ export default function FeedSettingsModal({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3 mt-6">
+        <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
           <button
             onClick={handleCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
+            className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 min-h-[44px]"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
           >
             {isSaving ? 'Saving...' : 'Save Settings'}
           </button>
