@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { usePostHog } from '@/providers/PostHogProvider'
 import { usePathname } from 'next/navigation'
 
@@ -18,41 +18,41 @@ export function usePostHogTracking() {
     }
   }, [pathname, posthog])
 
-  // Authentication tracking
-  const trackUserSignup = (method: 'email' | 'google' = 'email') => {
+  // Authentication tracking - using useCallback to prevent object recreation
+  const trackUserSignup = useCallback((method: 'email' | 'google' = 'email') => {
     posthog?.capture('user_signup_attempted', {
       signup_method: method,
       page_url: window.location.href,
     })
-  }
+  }, [posthog])
 
-  const trackUserSignupSuccess = (userId: string, method: 'email' | 'google' = 'email') => {
+  const trackUserSignupSuccess = useCallback((userId: string, method: 'email' | 'google' = 'email') => {
     posthog?.identify(userId)
     posthog?.capture('user_signup_completed', {
       signup_method: method,
       user_id: userId,
     })
-  }
+  }, [posthog])
 
-  const trackUserLogin = (method: 'email' | 'google' = 'email') => {
+  const trackUserLogin = useCallback((method: 'email' | 'google' = 'email') => {
     posthog?.capture('user_login_attempted', {
       login_method: method,
       page_url: window.location.href,
     })
-  }
+  }, [posthog])
 
-  const trackUserLoginSuccess = (userId: string, method: 'email' | 'google' = 'email') => {
+  const trackUserLoginSuccess = useCallback((userId: string, method: 'email' | 'google' = 'email') => {
     posthog?.identify(userId)
     posthog?.capture('user_login_completed', {
       login_method: method,
       user_id: userId,
     })
-  }
+  }, [posthog])
 
-  const trackUserLogout = () => {
+  const trackUserLogout = useCallback(() => {
     posthog?.capture('user_logout_completed')
     posthog?.reset()
-  }
+  }, [posthog])
 
   // Onboarding tracking
   const trackOnboardingStarted = () => {
@@ -111,12 +111,12 @@ export function usePostHogTracking() {
     })
   }
 
-  const trackFeedCategoryInteraction = (categoryType: string, itemCount: number) => {
+  const trackFeedCategoryInteraction = useCallback((categoryType: string, itemCount: number) => {
     posthog?.capture('feed_category_viewed', {
       category_type: categoryType,
       category_item_count: itemCount,
     })
-  }
+  }, [posthog])
 
   // Research-specific tracking
   const trackResearchDiscovery = (discoveryType: 'breakthrough_paper' | 'funding_opportunity' | 'collaboration_lead') => {
@@ -155,15 +155,15 @@ export function usePostHogTracking() {
     })
   }
 
-  // Error tracking
-  const trackError = (errorType: string, errorMessage: string, context?: Record<string, any>) => {
+  // Error tracking - stabilized to prevent excessive calls
+  const trackError = useCallback((errorType: string, errorMessage: string, context?: Record<string, any>) => {
     posthog?.capture('error_occurred', {
       error_type: errorType,
       error_message: errorMessage,
       page_url: window.location.href,
       ...context,
     })
-  }
+  }, [posthog])
 
   // Generic event tracking
   const trackEvent = (eventName: string, properties?: Record<string, any>) => {

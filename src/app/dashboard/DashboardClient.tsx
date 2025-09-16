@@ -93,15 +93,17 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
         tracking.trackUserLoginSuccess(user.id, 'email')
         window.sessionStorage.removeItem('just_logged_in')
       }
-
-      // Track feed category interactions
-      if (feedItems && feedItems.length > 0) {
-        Object.entries(groupedItems).forEach(([categoryType, items]) => {
-          tracking.trackFeedCategoryInteraction(categoryType, items.length)
-        })
-      }
     }
-  }, [user, feedItems, groupedItems, tracking])
+  }, [user, tracking])
+
+  // Separate useEffect for feed category tracking to prevent excessive events
+  useEffect(() => {
+    if (user && feedItems && feedItems.length > 0) {
+      Object.entries(groupedItems).forEach(([categoryType, items]) => {
+        tracking.trackFeedCategoryInteraction(categoryType, items.length)
+      })
+    }
+  }, [user, feedItems, groupedItems])
 
   const loadSessionFeedItems = async (sessionId: number) => {
     try {

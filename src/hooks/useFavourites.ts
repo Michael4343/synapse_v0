@@ -21,6 +21,9 @@ export function useFavourites(): UseFavouritesReturn {
   const tracking = usePostHogTracking()
 
   const loadFavourites = useCallback(async () => {
+    // Guard against concurrent calls to prevent infinite loops
+    if (isLoading) return
+
     try {
       setIsLoading(true)
       const { data: { session } } = await supabase.auth.getSession()
@@ -34,6 +37,7 @@ export function useFavourites(): UseFavouritesReturn {
 
       if (error) {
         console.error('Failed to load favourites:', error)
+        tracking.trackError('favourites_load_failed', error.message)
         return
       }
 
@@ -45,7 +49,7 @@ export function useFavourites(): UseFavouritesReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [supabase, tracking])
+  }, [supabase, isLoading])
 
   const isFavourite = useCallback((itemId: number): boolean => {
     return favourites.has(itemId)
