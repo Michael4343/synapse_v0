@@ -154,7 +154,7 @@ export function useFavourites(): UseFavouritesReturn {
       }
 
       // Extract the feed items from the joined query
-      const favouritedItems = data?.map(fav => fav.feed_items).filter(Boolean) as FeedItem[] || []
+      const favouritedItems = data?.map(fav => fav.feed_items).filter(Boolean).flat() as FeedItem[] || []
 
       tracking.trackEvent('favourited_items_loaded', {
         count: favouritedItems.length
