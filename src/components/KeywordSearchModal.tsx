@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { usePostHogTracking } from '@/hooks/usePostHogTracking'
-import { CategoryPreferences } from '@/types/database'
+import { CategoryPreferences, SearchPreferences } from '@/types/database'
 
 interface KeywordSearchModalProps {
   isOpen: boolean
   onClose: () => void
-  onSearch: (keywords: string, categories?: CategoryPreferences) => void
+  onSearch: (keywords: string, preferences?: SearchPreferences) => void
   isSearching?: boolean
 }
 
@@ -19,11 +19,16 @@ export default function KeywordSearchModal({
 }: KeywordSearchModalProps) {
   const tracking = usePostHogTracking()
   const [keywords, setKeywords] = useState('')
-  const [categories, setCategories] = useState<CategoryPreferences>({
-    publications: true,
-    patents: true,
-    funding_opportunities: true,
-    trending_science_news: true
+  const [searchPreferences, setSearchPreferences] = useState<SearchPreferences>({
+    categories: {
+      publications: true,
+      patents: true,
+      funding_opportunities: true,
+      trending_science_news: true
+    },
+    itemsPerCategory: 4,
+    timeRange: 'last_3_months',
+    impactLevel: 'all'
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,17 +38,23 @@ export default function KeywordSearchModal({
     tracking.trackEvent('keyword_search_initiated', {
       keywords: keywords.trim(),
       keywords_length: keywords.trim().length,
-      categories_enabled: Object.values(categories).filter(Boolean).length
+      categories_enabled: Object.values(searchPreferences.categories).filter(Boolean).length,
+      total_items: searchPreferences.itemsPerCategory,
+      time_range: searchPreferences.timeRange,
+      impact_level: searchPreferences.impactLevel
     })
 
-    onSearch(keywords.trim(), categories)
+    onSearch(keywords.trim(), searchPreferences)
     setKeywords('')
   }
 
   const handleCategoryChange = (category: keyof CategoryPreferences) => {
-    setCategories(prev => ({
+    setSearchPreferences(prev => ({
       ...prev,
-      [category]: !prev[category]
+      categories: {
+        ...prev.categories,
+        [category]: !prev.categories[category]
+      }
     }))
   }
 
@@ -58,6 +69,18 @@ export default function KeywordSearchModal({
     funding_opportunities: 'Funding',
     trending_science_news: 'News'
   }
+
+  const timeRangeOptions = [
+    { value: 'last_month', label: 'Last month' },
+    { value: 'last_3_months', label: 'Last 3 months' },
+    { value: 'last_6_months', label: 'Last 6 months' },
+    { value: 'last_year', label: 'Last year' }
+  ]
+
+  const impactLevelOptions = [
+    { value: 'all', label: 'All sources' },
+    { value: 'high_impact', label: 'High-impact only' }
+  ]
 
   if (!isOpen) return null
 
@@ -104,7 +127,7 @@ export default function KeywordSearchModal({
                 >
                   <input
                     type="checkbox"
-                    checked={categories[key as keyof CategoryPreferences]}
+                    checked={searchPreferences.categories[key as keyof CategoryPreferences]}
                     onChange={() => handleCategoryChange(key as keyof CategoryPreferences)}
                     disabled={isSearching}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
@@ -112,6 +135,75 @@ export default function KeywordSearchModal({
                   <span className="text-sm text-gray-700">{label}</span>
                 </label>
               ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-3 block">
+              Total items: {searchPreferences.itemsPerCategory}
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="20"
+              value={searchPreferences.itemsPerCategory}
+              onChange={(e) => setSearchPreferences(prev => ({
+                ...prev,
+                itemsPerCategory: parseInt(e.target.value)
+              }))}
+              disabled={isSearching}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+            />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>1</span>
+              <span>20</span>
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              Distributed across selected categories
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Time range:
+              </label>
+              <select
+                value={searchPreferences.timeRange}
+                onChange={(e) => setSearchPreferences(prev => ({
+                  ...prev,
+                  timeRange: e.target.value
+                }))}
+                disabled={isSearching}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+              >
+                {timeRangeOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Quality level:
+              </label>
+              <select
+                value={searchPreferences.impactLevel}
+                onChange={(e) => setSearchPreferences(prev => ({
+                  ...prev,
+                  impactLevel: e.target.value
+                }))}
+                disabled={isSearching}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+              >
+                {impactLevelOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

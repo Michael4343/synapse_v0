@@ -254,10 +254,10 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
     setSidebarCollapsed(!sidebarCollapsed)
   }
 
-  const handleKeywordSearch = async (keywords: string, categories?: any) => {
+  const handleKeywordSearch = async (keywords: string, preferences?: any) => {
     try {
       const startTime = Date.now()
-      const result = await keywordSearch(keywords, categories)
+      const result = await keywordSearch(keywords, preferences)
       const endTime = Date.now()
       setShowKeywordSearch(false)
 
@@ -265,7 +265,10 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
         keywords: keywords,
         results_count: result.itemsGenerated || 0,
         generation_time: endTime - startTime,
-        categories_enabled: categories ? Object.values(categories).filter(Boolean).length : 4
+        categories_enabled: preferences?.categories ? Object.values(preferences.categories).filter(Boolean).length : 4,
+        total_items: preferences?.itemsPerCategory || 4,
+        time_range: preferences?.timeRange || 'last_3_months',
+        impact_level: preferences?.impactLevel || 'all'
       })
 
       // Refresh the page to show the new feed that replaces the current one

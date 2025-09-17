@@ -235,85 +235,104 @@ serve(async (req) => {
 
     if (enabledCategories.publications) {
       const publicationItems = getItemsForCategory()
-      categoryInstructions.push(`1. PUBLICATIONS (${timeRangeText}): Research papers, journal articles, and preprints. ${impactLevel === 'high_impact' ? 'Focus on high-impact journals only.' : 'Include papers from journals, arxiv, research repositories.'} MUST RETURN EXACTLY ${publicationItems} REAL ITEMS.`)
-      jsonStructure['publications'] = `Array of exactly ${publicationItems} publication objects, each with fields: title (string), authors (array of strings), summary (string), url (string to actual paper)`
+      categoryInstructions.push(`1. PUBLICATIONS (${timeRangeText}): Research papers, journal articles, and preprints. ${impactLevel === 'high_impact' ? 'Focus on high-impact journals only.' : 'Include papers from journals, arxiv, research repositories.'} MUST RETURN EXACTLY ${publicationItems} ITEMS.`)
+      jsonStructure['publications'] = [
+        {
+          "title": "Paper title",
+          "authors": ["Author1", "Author2"],
+          "summary": "Brief summary of the paper",
+          "url": "https://journal.com/articles/direct-paper-link"
+        }
+      ]
     }
 
     if (enabledCategories.patents) {
       const patentItems = getItemsForCategory()
-      categoryInstructions.push(`2. PATENTS (${timeRangeText}): Recently granted patents. ${impactLevel === 'high_impact' ? 'Focus on major patents from leading companies/institutions.' : 'Include patents from patent databases and offices.'} MUST RETURN EXACTLY ${patentItems} REAL ITEMS.`)
-      jsonStructure['patents'] = `Array of exactly ${patentItems} patent objects, each with fields: title (string), patent_number (string), inventors (array of strings), summary (string), url (string to actual patent)`
+      categoryInstructions.push(`2. PATENTS (${timeRangeText}): Recently granted patents. ${impactLevel === 'high_impact' ? 'Focus on major patents from leading companies/institutions.' : 'Include patents from patent databases and offices.'} MUST RETURN EXACTLY ${patentItems} ITEMS.`)
+      jsonStructure['patents'] = [
+        {
+          "title": "Patent title",
+          "patent_number": "US1234567",
+          "inventors": ["Inventor1"],
+          "summary": "Brief summary",
+          "url": "https://example.com/patent"
+        }
+      ]
     }
 
     if (enabledCategories.funding_opportunities) {
       const fundingItems = getItemsForCategory()
       const fundingFilter = impactLevel === 'high_impact' ? 'Focus on major grants ($100K+) from prestigious agencies.' : 'Include grants of all sizes.'
-      categoryInstructions.push(`3. FUNDING (active with future deadlines): Grant opportunities with application deadlines AFTER ${todayString}. Only include grants that researchers can still apply for. Geographic eligibility: ${geographicRegions}. ${fundingFilter} MUST RETURN EXACTLY ${fundingItems} REAL ITEMS.`)
-      jsonStructure['funding_opportunities'] = `Array of exactly ${fundingItems} funding objects, each with fields: title (string), issuing_agency (string), funding_amount (string), deadline (YYYY-MM-DD), eligible_regions (string), summary (string), url (string to actual grant)`
+      categoryInstructions.push(`3. FUNDING (active with future deadlines): Grant opportunities with application deadlines AFTER ${todayString}. Only include grants that researchers can still apply for. Geographic eligibility: ${geographicRegions}. ${fundingFilter} MUST RETURN EXACTLY ${fundingItems} ITEMS.`)
+      jsonStructure['funding_opportunities'] = [
+        {
+          "title": "Grant title",
+          "issuing_agency": "Agency name",
+          "funding_amount": "$X amount",
+          "deadline": "2024-MM-DD",
+          "eligible_regions": "Regions (must match researcher eligibility)",
+          "summary": "Brief summary",
+          "url": "https://example.com/grant"
+        }
+      ]
     }
 
     if (enabledCategories.trending_science_news) {
       const newsItems = getItemsForCategory()
       const newsTimeRange = timeRange === 'last_month' ? 'past month' : 'past 3 months'
       const newsFilter = impactLevel === 'high_impact' ? 'Focus on major news from authoritative sources (Nature, Science, major universities).' : 'Include science news, research announcements, university press releases, and articles about research developments.'
-      categoryInstructions.push(`4. NEWS (${newsTimeRange}): ${newsFilter} MUST RETURN EXACTLY ${newsItems} REAL ITEMS.`)
-      jsonStructure['trending_science_news'] = `Array of exactly ${newsItems} news objects, each with fields: title (string), source (string), summary (string), url (string to actual article)`
+      categoryInstructions.push(`4. NEWS (${newsTimeRange}): ${newsFilter} MUST RETURN EXACTLY ${newsItems} ITEMS.`)
+      jsonStructure['trending_science_news'] = [
+        {
+          "title": "News title",
+          "source": "Source name",
+          "summary": "Brief summary",
+          "url": "https://example.com/news"
+        }
+      ]
     }
 
     // Prepare the prompt for enabled categories only
     let prompt
     if (keywordOnlySearch) {
       // Pure keyword search prompt - no profile bias
-      prompt = `You are a data extraction assistant. Find and extract REAL research content related to these keywords: "${searchKeywords.join(', ')}"
+      prompt = `You are a data extraction assistant. Extract and structure recent research data related to these keywords: "${searchKeywords.join(', ')}"
 
 TODAY'S DATE: ${todayString}
 
-TASK: Find and extract REAL research content (do NOT generate fake content)
+TASK: Extract structured data from recent research sources (do NOT write research content)
 KEYWORDS: ${searchKeywords.join(', ')}
-CRITICAL: Only return actual, verifiable research content that exists. No placeholders or examples.
+IMPORTANT: This is pure keyword-based data extraction. Focus ONLY on the provided keywords.
 
 EXTRACT recent data (past 6 months) for these categories:
 ${categoryInstructions.join('\n')}
 
-OUTPUT FORMAT: Return valid JSON with the exact structure below:
-${Object.entries(jsonStructure).map(([key, schema]) => `"${key}": ${schema}`).join(',\n')}
+OUTPUT FORMAT: Return ONLY valid JSON with the EXACT item counts specified for each category:
+${JSON.stringify(jsonStructure, null, 2)}
 
-CRITICAL REQUIREMENTS:
-- REAL CONTENT ONLY: Every item must be verifiable and actually exist
-- EXACT COUNTS: Total items across all categories must equal ${totalItems}
-- NO PLACEHOLDERS: Do not use "Paper title 1", "Example patent", etc.
-- VALID URLS: All URLs must link to actual, accessible content
-- ${impactRequirements}
-- JSON ONLY: No markdown, explanations, or additional text
+CRITICAL: Follow the exact item counts specified in each category instruction above. Total items: ${totalItems}. ${impactRequirements} Focus on "${searchKeywords.join(', ')}"
 
-VERIFICATION: Each item should be real content you can find through search.`
+ENFORCE EXACT COUNTS: Each category must return exactly the number of items specified in its instruction (not 3-4 default).
     } else {
       // Profile-based search prompt
-      prompt = `You are a data extraction assistant. Find and extract REAL research content relevant to this researcher profile.
+      prompt = `You are a data extraction assistant. Extract and structure recent research data for this researcher profile.
 
 TODAY'S DATE: ${todayString}
 
-TASK: Find and extract REAL research content (do NOT generate fake content)
+TASK: Extract structured data from research sources (do NOT write research content)
 RESEARCHER PROFILE: ${profile.profile_text}${keywordContext}
-CRITICAL: Only return actual, verifiable research content that exists. No placeholders or examples.
 
 EXCLUSIONS: ${researcherName ? `Content by "${researcherName}". ` : ''}${institution ? `Content from "${institution}". ` : ''}Content older than 6 months.
 
 EXTRACT recent data for these categories:
 ${categoryInstructions.join('\n')}
 
-OUTPUT FORMAT: Return valid JSON with the exact structure below:
-${Object.entries(jsonStructure).map(([key, schema]) => `"${key}": ${schema}`).join(',\n')}
+OUTPUT FORMAT: Return ONLY valid JSON with the EXACT item counts specified for each category:
+${JSON.stringify(jsonStructure, null, 2)}
 
-CRITICAL REQUIREMENTS:
-- REAL CONTENT ONLY: Every item must be verifiable and actually exist
-- EXACT COUNTS: Total items across all categories must equal ${totalItems}
-- NO PLACEHOLDERS: Do not use "Paper title 1", "Example patent", etc.
-- VALID URLS: All URLs must link to actual, accessible content
-- ${impactRequirements}
-- JSON ONLY: No markdown, explanations, or additional text
+CRITICAL: Follow the exact item counts specified in each category instruction above. Total items: ${totalItems}. ${impactRequirements} Focus on researcher profile.
 
-VERIFICATION: Each item should be real content you can find through search.`
+ENFORCE EXACT COUNTS: Each category must return exactly the number of items specified in its instruction (not 3-4 default).
     }
 
     // Call Perplexity API with structured output

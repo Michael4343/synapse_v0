@@ -5,6 +5,13 @@ export interface CategoryPreferences {
   trending_science_news: boolean
 }
 
+export interface SearchPreferences {
+  categories: CategoryPreferences
+  itemsPerCategory: number
+  timeRange: string
+  impactLevel: string
+}
+
 export interface Database {
   public: {
     Tables: {

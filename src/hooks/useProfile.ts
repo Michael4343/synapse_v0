@@ -129,7 +129,7 @@ export function useProfile() {
     }
   }, [isGeneratingFeed, supabase])
 
-  const keywordSearch = useCallback(async (keywords: string, categories?: any) => {
+  const keywordSearch = useCallback(async (keywords: string, searchPreferences?: any) => {
     // Prevent multiple simultaneous calls
     if (isGeneratingFeed) {
       console.log('Keyword search already in progress, skipping...')
@@ -146,11 +146,12 @@ export function useProfile() {
         throw new Error('No active session')
       }
 
-      console.log('Starting keyword search for user:', session.user.id, 'Keywords:', keywords, 'Categories:', categories)
+      console.log('Starting keyword search for user:', session.user.id, 'Keywords:', keywords, 'Search Preferences:', searchPreferences)
 
       // Create feed session record for keyword search
-      const enabledCategoryCount = categories ? Object.values(categories).filter(Boolean).length : 4
-      const sessionTitle = `Keyword Search: "${keywords.slice(0, 30)}${keywords.length > 30 ? '...' : ''}" (${enabledCategoryCount} categories) - ${new Date().toLocaleDateString('en-AU', {
+      const enabledCategoryCount = searchPreferences?.categories ? Object.values(searchPreferences.categories).filter(Boolean).length : 4
+      const itemsPerCategory = searchPreferences?.itemsPerCategory || 4
+      const sessionTitle = `Search: "${keywords.slice(0, 25)}${keywords.length > 25 ? '...' : ''}" (${enabledCategoryCount} cats, ${itemsPerCategory} items) - ${new Date().toLocaleDateString('en-AU', {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
@@ -163,7 +164,7 @@ export function useProfile() {
           user_id: session.user.id,
           title: sessionTitle,
           search_type: 'keyword_search',
-          preferences: { keywords, categories: categories || {} }
+          preferences: { keywords, ...searchPreferences }
         })
         .select()
         .single()
@@ -178,7 +179,7 @@ export function useProfile() {
       // Use unified generate-feed function with keyword-only search
       const response = await supabase.functions.invoke('generate-feed', {
         body: {
-          preferences: { keywords, categories },
+          preferences: { keywords, ...searchPreferences },
           sessionId: sessionData.id,
           searchType: 'keyword-search',
           keywordOnlySearch: true
