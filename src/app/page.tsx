@@ -25,8 +25,11 @@ export default function Home() {
     }
   }, [message])
 
-  // Handle URL parameters (error/message) separately from auth check
+  // Handle URL parameters (error/message) after auth check completes
   useEffect(() => {
+    // Only process URL parameters after auth check is complete and UI is visible
+    if (isCheckingAuth) return
+
     // Ensure we're on the client side before accessing window
     if (typeof window === 'undefined') return
 
@@ -36,6 +39,7 @@ export default function Home() {
 
     if (errorParam) {
       setError(decodeURIComponent(errorParam))
+      console.log('Setting error message from URL:', decodeURIComponent(errorParam))
       // Clean up URL
       const url = new URL(window.location.href)
       url.searchParams.delete('error')
@@ -51,7 +55,7 @@ export default function Home() {
       url.searchParams.delete('message')
       window.history.replaceState({}, '', url.toString())
     }
-  }, [])
+  }, [isCheckingAuth]) // Dependency on isCheckingAuth ensures this runs when loading completes
 
   // Check if user is already authenticated
   useEffect(() => {
