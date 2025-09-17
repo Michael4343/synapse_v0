@@ -100,14 +100,8 @@ export async function signup(formData: FormData) {
 
   revalidatePath('/', 'layout')
 
-  // Check if user was immediately confirmed (email confirmations disabled)
-  if (data.user && data.user.email_confirmed_at) {
-    // User is immediately active, show success message
-    redirect(`/?message=${encodeURIComponent('Account created successfully! You can now sign in to access your dashboard.')}`)
-  } else {
-    // Email confirmation required, show message
-    redirect(`/?message=${encodeURIComponent('Account created successfully! Please check your email for a verification link.')}`)
-  }
+  // Always show the email verification message after successful signup
+  redirect(`/?message=${encodeURIComponent('Account created successfully! Please check your email for a verification link.')}`)
 }
 
 export async function resetPassword(formData: FormData) {
