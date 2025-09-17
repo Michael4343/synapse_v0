@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { FeedSession } from '@/types/database'
+import type { FeedSession } from '@/types/database'
 import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 import FeedHistoryItem from './FeedHistoryItem'
 

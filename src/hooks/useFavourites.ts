@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { FeedItem, UserFavourite } from '@/types/database'
+import type { FeedItem, UserFavourite } from '@/types/database'
 import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 
 interface UseFavouritesReturn {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { usePostHogTracking } from '@/hooks/usePostHogTracking'
-import { CategoryPreferences, SearchPreferences } from '@/types/database'
+import type { CategoryPreferences, SearchPreferences } from '@/types/database'
 
 interface KeywordSearchModalProps {
   isOpen: boolean

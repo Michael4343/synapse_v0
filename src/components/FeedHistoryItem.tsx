@@ -1,6 +1,6 @@
 'use client'
 
-import { FeedSession } from '@/types/database'
+import type { FeedSession } from '@/types/database'
 import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 
 interface FeedHistoryItemProps {

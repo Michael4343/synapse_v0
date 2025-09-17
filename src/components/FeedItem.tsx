@@ -1,6 +1,6 @@
 'use client'
 
-import { FeedItem as FeedItemType } from '@/types/database'
+import type { FeedItem as FeedItemType } from '@/types/database'
 import { usePostHogTracking } from '@/hooks/usePostHogTracking'
 import { useFavourites } from '@/hooks/useFavourites'
 
