@@ -81,7 +81,7 @@ export async function signup(formData: FormData) {
     email: email.trim().toLowerCase(),
     password: password,
     options: {
-      emailRedirectTo: `${siteUrl}/dashboard`
+      emailRedirectTo: `${siteUrl}/`
     }
   })
 
@@ -119,7 +119,7 @@ export async function resetPassword(formData: FormData) {
   const siteUrl = await getSiteUrl()
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/dashboard`
+    redirectTo: `${siteUrl}/`
   })
 
   if (error) {
