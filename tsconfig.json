@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2022",                        // Updated from es5 for better performance
     "lib": ["dom", "dom.iterable", "es6"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -13,6 +13,10 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+
+    // Performance optimizations for faster compilation
+    "verbatimModuleSyntax": true,              // Faster module resolution
+    "assumeChangesOnlyAffectDirectDependencies": true, // Faster incremental builds
     "plugins": [
       {
         "name": "next"

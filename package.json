@@ -7,6 +7,11 @@
     "dev:wsl": "NODE_OPTIONS='--max-old-space-size=6144' NEXT_PRIVATE_SKIP_TRACE=1 WATCHPACK_POLLING=true next dev --turbo",
     "dev:fast": "NODE_OPTIONS='--max-old-space-size=4096' NEXT_PRIVATE_SKIP_TRACE=1 next dev --turbo",
     "dev:minimal": "NODE_OPTIONS='--max-old-space-size=4096' next -c next.config.dev.js dev",
+
+    "dev:speed": "NODE_OPTIONS='--max-old-space-size=8192' NEXT_PRIVATE_SKIP_TRACE=1 NEXT_TELEMETRY_DISABLED=1 WATCHPACK_POLLING=true next dev --turbo",
+    "dev:lightning": "NODE_OPTIONS='--max-old-space-size=4096' NEXT_PRIVATE_SKIP_TRACE=1 NEXT_TELEMETRY_DISABLED=1 NEXT_CONFIG_FILE=next.config.speed.js next dev",
+    "dev:benchmark": "time npm run dev:lightning",
+
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

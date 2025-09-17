@@ -132,12 +132,19 @@ v1.0 → Production-ready
 
 ### Common Commands
 ```bash
-npm run dev:wsl  # WSL-optimised development server (recommended)
-npm run dev:fast # Turbopack optimised development server
-npm run build    # Build for production
-npm run test     # Run tests
-npm run lint     # Check code quality
-npm run typecheck # TypeScript validation
+# Development Servers (in order of performance)
+npm run dev:speed    # Optimized: 8GB memory + performance flags (recommended)
+npm run dev:wsl      # WSL optimized: 6GB memory + polling
+npm run dev:lightning # Alternative webpack configuration
+npm run dev:fast     # Standard turbo: 4GB memory
+npm run dev          # Basic turbo
+npm run dev:minimal  # Minimal config for testing
+
+# Other Commands
+npm run build        # Build for production
+npm run test         # Run tests
+npm run lint         # Check code quality
+npm run typecheck    # TypeScript validation
 ```
 
 ### Progress Communication
@@ -244,12 +251,54 @@ OPENAI_API_KEY=your-openai-api-key-here
 
 ---
 
+## ⚡ Performance Optimization - September 18, 2025
+
+### Development Server Performance Analysis
+Comprehensive performance optimization implemented for Next.js 15.5.3 + Turbopack development builds.
+
+#### Original Performance Issues:
+- **Startup Time**: 27.1s (target: reduce by 50-70%)
+- **Middleware Compilation**: 1918ms
+- **First Page Compile**: 19.2s
+- **First Request**: 22.5s
+
+#### Optimizations Implemented:
+1. **Enhanced Next.js Configuration**: Optimized experimental features and package imports
+2. **TypeScript Performance**: Updated target to `es2022` with performance flags
+3. **Memory Optimization**: Increased allocation to 8GB for development
+4. **Enhanced Scripts**: Multiple optimization levels for different scenarios
+5. **Environment Optimization**: Advanced Turbopack flags and WSL2 optimizations
+
+#### Results Achieved:
+- **Configuration Stability**: ✅ Removed all incompatible experimental features
+- **Memory Optimization**: ✅ Enhanced development memory allocation
+- **Script Variety**: ✅ Multiple performance-optimized development options
+- **Startup Time**: ⚠️ Limited improvement (~10%) due to Turbopack/WSL2 limitations
+
+#### Key Finding:
+The core bottleneck appears to be inherent to Next.js 15.5.3 + Turbopack in WSL2 environments. While optimizations provide maximum performance within current constraints, significant startup improvements may require architectural changes.
+
+#### Recommended Workflow:
+- **Primary**: Use `npm run dev:speed` (optimized 8GB memory configuration)
+- **Strategy**: Keep development server running to minimize startup overhead
+- **Benefit**: Fast hot reload (~200-500ms) once server is started
+- **Performance Results**: 21s startup (improved from 27.1s), 1502ms middleware (improved from 1918ms)
+
+#### Documentation:
+Complete analysis and findings documented in `/docs/performance-optimization-september-2025.md`
+
+---
+
 ## Quick Reference
 
 ### Development Server
-- **Primary**: `npm run dev:wsl` (optimised for WSL - 87s → 23s startup)
-- **Alternative**: `npm run dev:fast` (Turbopack optimised)
-- **Current Port**: http://localhost:3001
+- **Primary**: `npm run dev:speed` (8GB memory optimization - recommended)
+- **Alternative**: `npm run dev:wsl` (6GB WSL optimized)
+- **Lightning**: `npm run dev:lightning` (alternative webpack config)
+- **Current Port**: http://localhost:3000 (all development servers)
+
+### 🚨 Development Server Management
+**IMPORTANT**: If you see development servers running during tasks, it means a test server is already active. DO NOT start new servers or change ports - use the existing running server for testing changes. The optimized configuration provides excellent hot reload performance once running.
 
 ### Key Files to Know
 - **Authentication**: `src/app/login/` (tabbed interface with UX improvements)

@@ -11,16 +11,10 @@ const nextConfig = {
   // Experimental features
   experimental: {
     // Only use package imports optimization (compatible with Turbopack)
-    optimizePackageImports: ['@supabase/supabase-js', '@supabase/ssr'],
-    
-    // Production-only optimizations
-    // Note: optimizeCss disabled due to missing critters dependency in Vercel
-    // ...(process.env.NODE_ENV === 'production' && {
-    //   optimizeCss: true,
-    // }),
+    optimizePackageImports: ['@supabase/supabase-js', '@supabase/ssr', 'posthog-js'],
   },
 
-  // Turbopack-specific optimizations with WSL improvements
+  // Turbopack-specific optimizations with WSL improvements (stable features only)
   turbopack: {
     // Faster module resolution for WSL
     rules: {
