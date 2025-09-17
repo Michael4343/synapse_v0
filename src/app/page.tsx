@@ -18,14 +18,46 @@ export default function Home() {
   const [message, setMessage] = useState<string>('')
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
-  // Check if user is already authenticated and handle query params
+  // Debug log to track message state changes
+  useEffect(() => {
+    if (message) {
+      console.log('Message state updated:', message)
+    }
+  }, [message])
+
+  // Handle URL parameters (error/message) separately from auth check
+  useEffect(() => {
+    // Ensure we're on the client side before accessing window
+    if (typeof window === 'undefined') return
+
+    const urlParams = new URLSearchParams(window.location.search)
+    const errorParam = urlParams.get('error')
+    const messageParam = urlParams.get('message')
+
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam))
+      // Clean up URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('error')
+      window.history.replaceState({}, '', url.toString())
+    }
+
+    if (messageParam) {
+      const decodedMessage = decodeURIComponent(messageParam)
+      console.log('Setting success message from URL:', decodedMessage)
+      setMessage(decodedMessage)
+      // Clean up URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('message')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [])
+
+  // Check if user is already authenticated
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-
-      // Ensure we're on the client side before accessing window
-      if (typeof window === 'undefined') return
 
       // Debug logging (remove in production)
       if (process.env.NODE_ENV === 'development') {
@@ -36,35 +68,11 @@ export default function Home() {
         })
       }
 
-      // If user has any auth tokens from email links, they'll be automatically logged in
-      // and can use the "Change Password" button in the dashboard
-
       // Only redirect confirmed users to dashboard
       if (user && user.email_confirmed_at) {
         router.push('/dashboard')
       } else {
         setIsCheckingAuth(false)
-
-        // Handle error/message query parameters
-        const urlParams = new URLSearchParams(window.location.search)
-        const errorParam = urlParams.get('error')
-        const messageParam = urlParams.get('message')
-
-        if (errorParam) {
-          setError(decodeURIComponent(errorParam))
-          // Clean up URL
-          const url = new URL(window.location.href)
-          url.searchParams.delete('error')
-          window.history.replaceState({}, '', url.toString())
-        }
-
-        if (messageParam) {
-          setMessage(decodeURIComponent(messageParam))
-          // Clean up URL
-          const url = new URL(window.location.href)
-          url.searchParams.delete('message')
-          window.history.replaceState({}, '', url.toString())
-        }
       }
     }
 
@@ -73,8 +81,7 @@ export default function Home() {
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true)
-    setError('')
-    setMessage('')
+    // Don't clear error/message states here - let server action handle the flow
 
     if (activeTab === 'signup') {
       const password = formData.get('password') as string
