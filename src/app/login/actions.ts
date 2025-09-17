@@ -99,7 +99,15 @@ export async function signup(formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
-  redirect(`/?message=${encodeURIComponent('Account created successfully! Please check your email for a verification link.')}`)
+
+  // Check if user was immediately confirmed (email confirmations disabled)
+  if (data.user && data.user.email_confirmed_at) {
+    // User is immediately active, redirect to dashboard
+    redirect('/dashboard')
+  } else {
+    // Email confirmation required, show message
+    redirect(`/?message=${encodeURIComponent('Account created successfully! Please check your email for a verification link.')}`)
+  }
 }
 
 export async function resetPassword(formData: FormData) {
