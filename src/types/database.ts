@@ -8,8 +8,6 @@ export interface CategoryPreferences {
 export interface SearchPreferences {
   categories: CategoryPreferences
   itemsPerCategory: number
-  timeRange: string
-  impactLevel: string
 }
 
 export interface Database {

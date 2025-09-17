@@ -26,9 +26,7 @@ export default function KeywordSearchModal({
       funding_opportunities: true,
       trending_science_news: true
     },
-    itemsPerCategory: 4,
-    timeRange: 'last_3_months',
-    impactLevel: 'all'
+    itemsPerCategory: 4
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -39,9 +37,7 @@ export default function KeywordSearchModal({
       keywords: keywords.trim(),
       keywords_length: keywords.trim().length,
       categories_enabled: Object.values(searchPreferences.categories).filter(Boolean).length,
-      total_items: searchPreferences.itemsPerCategory,
-      time_range: searchPreferences.timeRange,
-      impact_level: searchPreferences.impactLevel
+      total_items: searchPreferences.itemsPerCategory
     })
 
     onSearch(keywords.trim(), searchPreferences)
@@ -70,17 +66,6 @@ export default function KeywordSearchModal({
     trending_science_news: 'News'
   }
 
-  const timeRangeOptions = [
-    { value: 'last_month', label: 'Last month' },
-    { value: 'last_3_months', label: 'Last 3 months' },
-    { value: 'last_6_months', label: 'Last 6 months' },
-    { value: 'last_year', label: 'Last year' }
-  ]
-
-  const impactLevelOptions = [
-    { value: 'all', label: 'All sources' },
-    { value: 'high_impact', label: 'High-impact only' }
-  ]
 
   if (!isOpen) return null
 
@@ -163,49 +148,6 @@ export default function KeywordSearchModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Time range:
-              </label>
-              <select
-                value={searchPreferences.timeRange}
-                onChange={(e) => setSearchPreferences(prev => ({
-                  ...prev,
-                  timeRange: e.target.value
-                }))}
-                disabled={isSearching}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-              >
-                {timeRangeOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Quality level:
-              </label>
-              <select
-                value={searchPreferences.impactLevel}
-                onChange={(e) => setSearchPreferences(prev => ({
-                  ...prev,
-                  impactLevel: e.target.value
-                }))}
-                disabled={isSearching}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-              >
-                {impactLevelOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
 
           <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3">
             <button

@@ -190,8 +190,6 @@ serve(async (req) => {
 
     const enabledCategories = preferences?.categories || defaultCategories
     const totalItems = preferences?.itemsPerCategory || 4
-    const timeRange = preferences?.timeRange || 'last_3_months'
-    const impactLevel = preferences?.impactLevel || 'all'
 
     // Calculate items per category by distributing total across enabled categories
     const enabledCategoryCount = Object.values(enabledCategories).filter(Boolean).length
@@ -204,8 +202,6 @@ serve(async (req) => {
     console.log('- enabledCategoryCount:', enabledCategoryCount)
     console.log('- baseItemsPerCategory:', baseItemsPerCategory)
     console.log('- remainder:', remainder)
-    console.log('- timeRange:', timeRange)
-    console.log('- impactLevel:', impactLevel)
 
     // Build category sections dynamically with distributed item counts
     const categoryInstructions = []
@@ -219,44 +215,28 @@ serve(async (req) => {
       return items
     }
 
-    // Generate time range descriptions
-    const timeRangeMapping = {
-      'last_month': 'past month',
-      'last_3_months': 'past 3 months',
-      'last_6_months': 'past 6 months',
-      'last_year': 'past year'
-    }
-    const timeRangeText = timeRangeMapping[timeRange] || 'past 6 months'
-
-    // Generate impact level requirements
-    const impactRequirements = impactLevel === 'high_impact'
-      ? 'HIGH-IMPACT SOURCES ONLY: Focus on top-tier journals, major patents, large grants, and authoritative news sources.'
-      : 'Include sources of all impact levels.'
 
     if (enabledCategories.publications) {
       const publicationItems = getItemsForCategory()
-      categoryInstructions.push(`1. PUBLICATIONS (${timeRangeText}): Research papers, journal articles, and preprints. ${impactLevel === 'high_impact' ? 'Focus on high-impact journals only.' : 'Include papers from journals, arxiv, research repositories.'} MUST RETURN EXACTLY ${publicationItems} REAL ITEMS.`)
+      categoryInstructions.push(`1. PUBLICATIONS: Research papers, journal articles, and preprints from recent months. Include papers from journals, arxiv, research repositories. MUST RETURN EXACTLY ${publicationItems} REAL ITEMS.`)
       jsonStructure['publications'] = `Array of exactly ${publicationItems} publication objects, each with fields: title (string), authors (array of strings), summary (string), url (string to actual paper)`
     }
 
     if (enabledCategories.patents) {
       const patentItems = getItemsForCategory()
-      categoryInstructions.push(`2. PATENTS (${timeRangeText}): Recently granted patents. ${impactLevel === 'high_impact' ? 'Focus on major patents from leading companies/institutions.' : 'Include patents from patent databases and offices.'} MUST RETURN EXACTLY ${patentItems} REAL ITEMS.`)
+      categoryInstructions.push(`2. PATENTS: Recently granted patents from recent months. Include patents from patent databases and offices. MUST RETURN EXACTLY ${patentItems} REAL ITEMS.`)
       jsonStructure['patents'] = `Array of exactly ${patentItems} patent objects, each with fields: title (string), patent_number (string), inventors (array of strings), summary (string), url (string to actual patent)`
     }
 
     if (enabledCategories.funding_opportunities) {
       const fundingItems = getItemsForCategory()
-      const fundingFilter = impactLevel === 'high_impact' ? 'Focus on major grants ($100K+) from prestigious agencies.' : 'Include grants of all sizes.'
-      categoryInstructions.push(`3. FUNDING (active with future deadlines): Grant opportunities with application deadlines AFTER ${todayString}. Only include grants that researchers can still apply for. Geographic eligibility: ${geographicRegions}. ${fundingFilter} MUST RETURN EXACTLY ${fundingItems} REAL ITEMS.`)
+      categoryInstructions.push(`3. FUNDING (active with future deadlines): Grant opportunities with application deadlines AFTER ${todayString}. Only include grants that researchers can still apply for. Geographic eligibility: ${geographicRegions}. Include grants of all sizes. MUST RETURN EXACTLY ${fundingItems} REAL ITEMS.`)
       jsonStructure['funding_opportunities'] = `Array of exactly ${fundingItems} funding objects, each with fields: title (string), issuing_agency (string), funding_amount (string), deadline (YYYY-MM-DD), eligible_regions (string), summary (string), url (string to actual grant)`
     }
 
     if (enabledCategories.trending_science_news) {
       const newsItems = getItemsForCategory()
-      const newsTimeRange = timeRange === 'last_month' ? 'past month' : 'past 3 months'
-      const newsFilter = impactLevel === 'high_impact' ? 'Focus on major news from authoritative sources (Nature, Science, major universities).' : 'Include science news, research announcements, university press releases, and articles about research developments.'
-      categoryInstructions.push(`4. NEWS (${newsTimeRange}): ${newsFilter} MUST RETURN EXACTLY ${newsItems} REAL ITEMS.`)
+      categoryInstructions.push(`4. NEWS (recent months): Science news, research announcements, university press releases, and articles about research developments from recent months. MUST RETURN EXACTLY ${newsItems} REAL ITEMS.`)
       jsonStructure['trending_science_news'] = `Array of exactly ${newsItems} news objects, each with fields: title (string), source (string), summary (string), url (string to actual article)`
     }
 
@@ -283,7 +263,6 @@ CRITICAL REQUIREMENTS:
 - EXACT COUNTS: Total items across all categories must equal ${totalItems}
 - NO PLACEHOLDERS: Do not use "Paper title 1", "Example patent", etc.
 - VALID URLS: All URLs must link to actual, accessible content
-- ${impactRequirements}
 - JSON ONLY: No markdown, explanations, or additional text
 
 VERIFICATION: Each item should be real content you can find through search.`
@@ -310,7 +289,6 @@ CRITICAL REQUIREMENTS:
 - EXACT COUNTS: Total items across all categories must equal ${totalItems}
 - NO PLACEHOLDERS: Do not use "Paper title 1", "Example patent", etc.
 - VALID URLS: All URLs must link to actual, accessible content
-- ${impactRequirements}
 - JSON ONLY: No markdown, explanations, or additional text
 
 VERIFICATION: Each item should be real content you can find through search.`

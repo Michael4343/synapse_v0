@@ -266,9 +266,7 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
         results_count: result.itemsGenerated || 0,
         generation_time: endTime - startTime,
         categories_enabled: preferences?.categories ? Object.values(preferences.categories).filter(Boolean).length : 4,
-        total_items: preferences?.itemsPerCategory || 4,
-        time_range: preferences?.timeRange || 'last_3_months',
-        impact_level: preferences?.impactLevel || 'all'
+        total_items: preferences?.itemsPerCategory || 4
       })
 
       // Refresh the page to show the new feed that replaces the current one
