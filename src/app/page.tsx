@@ -17,6 +17,7 @@ export default function Home() {
   const [error, setError] = useState<string>('')
   const [message, setMessage] = useState<string>('')
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   // Debug log to track message state changes
   useEffect(() => {
@@ -102,11 +103,25 @@ export default function Home() {
       tracking.trackUserSignup('email')
 
       try {
-        // Server action will handle redirect, no need for try/catch
-        await signup(formData)
-        // Track success (will happen on redirect to dashboard)
+        const result = await signup(formData)
+
+        if (result.success) {
+          // Show success modal instead of redirecting
+          setShowSuccessModal(true)
+          // Clear form and switch to sign in tab for next step
+          setActiveTab('signin')
+          // Clear any existing errors
+          setError('')
+          tracking.trackUserSignup('email')
+        } else {
+          // Show error message
+          setError(result.error || 'An unexpected error occurred')
+          tracking.trackError('signup_failed', result.error || 'Unknown signup error')
+        }
       } catch (error) {
-        tracking.trackError('signup_failed', error instanceof Error ? error.message : 'Unknown signup error')
+        const errorMessage = error instanceof Error ? error.message : 'Unknown signup error'
+        setError(errorMessage)
+        tracking.trackError('signup_failed', errorMessage)
       }
     } else if (activeTab === 'signin') {
       // Track login attempt
@@ -133,6 +148,15 @@ export default function Home() {
     }
 
     setIsLoading(false)
+  }
+
+  const handleModalClose = () => {
+    setShowSuccessModal(false)
+    // Reset form to help user see they're now on the sign in tab
+    const form = document.querySelector('form') as HTMLFormElement
+    if (form) {
+      form.reset()
+    }
   }
 
   // Show loading spinner while checking authentication
@@ -401,6 +425,38 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative bg-white rounded-xl shadow-xl p-8 m-4 max-w-md w-full">
+            <div className="text-center">
+              {/* Success Icon */}
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+
+              {/* Success Message */}
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                Account Created Successfully!
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Please check your email for a verification link to complete your account setup.
+              </p>
+
+              {/* Got It Button */}
+              <button
+                onClick={handleModalClose}
+                className="w-full bg-green-600 text-white rounded-lg px-4 py-3 font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

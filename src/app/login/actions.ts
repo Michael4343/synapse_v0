@@ -56,7 +56,7 @@ export async function login(formData: FormData) {
   redirect('/dashboard')
 }
 
-export async function signup(formData: FormData) {
+export async function signup(formData: FormData): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
 
   const email = formData.get('email') as string
@@ -64,15 +64,15 @@ export async function signup(formData: FormData) {
 
   // Basic validation
   if (!email || !password) {
-    redirect(`/?error=${encodeURIComponent('Email and password are required')}`)
+    return { success: false, error: 'Email and password are required' }
   }
 
   if (!email.includes('@')) {
-    redirect(`/?error=${encodeURIComponent('Please enter a valid email address')}`)
+    return { success: false, error: 'Please enter a valid email address' }
   }
 
   if (password.length < 6) {
-    redirect(`/?error=${encodeURIComponent('Password must be at least 6 characters long')}`)
+    return { success: false, error: 'Password must be at least 6 characters long' }
   }
 
   const siteUrl = await getSiteUrl()
@@ -95,13 +95,13 @@ export async function signup(formData: FormData) {
       errorMessage = 'Password must be at least 6 characters long.'
     }
 
-    redirect(`/?error=${encodeURIComponent(errorMessage)}`)
+    return { success: false, error: errorMessage }
   }
 
   revalidatePath('/', 'layout')
 
-  // Always show the email verification message after successful signup
-  redirect(`/?message=${encodeURIComponent('Account created successfully! Please check your email for a verification link.')}`)
+  // Return success instead of redirecting
+  return { success: true }
 }
 
 export async function resetPassword(formData: FormData) {
