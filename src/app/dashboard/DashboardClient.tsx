@@ -11,15 +11,17 @@ import KeywordSearchModal from '@/components/KeywordSearchModal'
 import FeedItem from '@/components/FeedItem'
 import RefreshFeedButton from '@/components/RefreshFeedButton'
 import FeedSidebar from '@/components/FeedSidebar'
+import ChangePasswordModal from '@/components/ChangePasswordModal'
 
 interface DashboardClientProps {
   user: any
   feedItems: any[] | null
   groupedItems: Record<string, any[]>
   children: React.ReactNode
+  changePassword: (newPassword: string) => Promise<void>
 }
 
-export default function DashboardClient({ user, feedItems, groupedItems, children }: DashboardClientProps) {
+export default function DashboardClient({ user, feedItems, groupedItems, children, changePassword }: DashboardClientProps) {
   const tracking = usePostHogTracking()
   const { keywordSearch, isGeneratingFeed } = useProfile()
   const { getFavouritedItems } = useFavourites()
@@ -33,6 +35,8 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
   const [showFavourites, setShowFavourites] = useState(false)
   const [favouriteFeedItems, setFavouriteFeedItems] = useState<FeedItemType[]>([])
   const [favouriteGroupedItems, setFavouriteGroupedItems] = useState<Record<string, FeedItemType[]>>({})
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
 
   // Check for mobile screen size
   useEffect(() => {
@@ -285,6 +289,31 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
     alert('Add Source feature coming soon! This will allow you to manually add URLs of research papers, patents, or other sources you\'re interested in.')
   }
 
+  const handlePasswordChange = async (newPassword: string) => {
+    setIsChangingPassword(true)
+    try {
+      await changePassword(newPassword)
+      // The server action will redirect to login page, so this won't be reached
+    } catch (error) {
+      setIsChangingPassword(false)
+      throw error // Let the modal handle the error display
+    }
+  }
+
+  // Add click listener for password change button
+  useEffect(() => {
+    const handlePasswordChangeClick = (e: Event) => {
+      const target = e.target as HTMLElement
+      if (target.closest('[data-change-password-trigger]')) {
+        setShowChangePassword(true)
+        tracking.trackEvent('change_password_modal_opened')
+      }
+    }
+
+    document.addEventListener('click', handlePasswordChangeClick)
+    return () => document.removeEventListener('click', handlePasswordChangeClick)
+  }, [])
+
   // Determine which feed data to display
   const displayFeedItems = showFavourites
     ? favouriteFeedItems
@@ -517,6 +546,14 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
         onClose={() => setShowKeywordSearch(false)}
         onSearch={handleKeywordSearch}
         isSearching={isGeneratingFeed}
+      />
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+        onPasswordChange={handlePasswordChange}
+        isChanging={isChangingPassword}
       />
     </>
   )

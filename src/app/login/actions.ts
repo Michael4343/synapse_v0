@@ -6,15 +6,15 @@ import { headers } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 
 async function getSiteUrl() {
-  // First try environment variable
+  // Always prioritize environment variable for production deployments
   if (process.env.NEXT_PUBLIC_SITE_URL) {
     return process.env.NEXT_PUBLIC_SITE_URL
   }
 
-  // Fallback to constructing from request headers
+  // Fallback to constructing from request headers (development only)
   const headersList = await headers()
   const host = headersList.get('host')
-  const protocol = headersList.get('x-forwarded-proto') || 'https'
+  const protocol = headersList.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https')
 
   return `${protocol}://${host}`
 }
@@ -139,37 +139,3 @@ export async function resetPassword(formData: FormData) {
   redirect(`/?message=${encodeURIComponent('If an account with that email exists, we\'ve sent you a password reset link. Please check your email.')}`)
 }
 
-export async function updatePassword(formData: FormData) {
-  const supabase = await createClient()
-
-  const password = formData.get('password') as string
-
-  // Basic validation
-  if (!password) {
-    redirect(`/reset-password?error=${encodeURIComponent('Password is required')}`)
-  }
-
-  if (password.length < 6) {
-    redirect(`/reset-password?error=${encodeURIComponent('Password must be at least 6 characters long')}`)
-  }
-
-  const { error } = await supabase.auth.updateUser({
-    password: password
-  })
-
-  if (error) {
-    let errorMessage = error.message
-
-    // Provide more user-friendly error messages
-    if (error.message.includes('Password should be at least')) {
-      errorMessage = 'Password must be at least 6 characters long.'
-    } else if (error.message.includes('Unable to validate email address')) {
-      errorMessage = 'Reset link has expired. Please request a new password reset link.'
-    }
-
-    redirect(`/reset-password?error=${encodeURIComponent(errorMessage)}`)
-  }
-
-  revalidatePath('/', 'layout')
-  redirect(`/?message=${encodeURIComponent('Your password has been updated successfully. You can now sign in with your new password.')}`)
-}

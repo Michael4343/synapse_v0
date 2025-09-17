@@ -36,6 +36,9 @@ export default function Home() {
         })
       }
 
+      // If user has any auth tokens from email links, they'll be automatically logged in
+      // and can use the "Change Password" button in the dashboard
+
       if (user) {
         router.push('/dashboard')
       } else {
