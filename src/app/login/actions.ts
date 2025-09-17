@@ -141,3 +141,23 @@ export async function resetPassword(formData: FormData) {
   redirect(`/?message=${encodeURIComponent('If an account with that email exists, we\'ve sent you a password reset link. Please check your email.')}`)
 }
 
+export async function signInWithGoogle() {
+  const supabase = await createClient()
+  const siteUrl = await getSiteUrl()
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${siteUrl}/auth/callback`
+    }
+  })
+
+  if (error) {
+    redirect(`/?error=${encodeURIComponent('Failed to authenticate with Google. Please try again.')}`)
+  }
+
+  if (data.url) {
+    redirect(data.url)
+  }
+}
+
