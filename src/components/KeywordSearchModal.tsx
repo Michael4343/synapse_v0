@@ -86,14 +86,17 @@ export default function KeywordSearchModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <label className="text-sm font-semibold text-gray-800 mb-2 block">
+              Search Keywords
+            </label>
             <input
               id="keywords"
               type="text"
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
-              placeholder="Enter search keywords..."
+              placeholder="e.g., artificial intelligence, machine learning..."
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base min-h-[48px]"
               disabled={isSearching}
               autoFocus
@@ -101,14 +104,18 @@ export default function KeywordSearchModal({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-3 block">
-              Include in results:
+            <label className="text-sm font-semibold text-gray-800 mb-3 block">
+              Categories
             </label>
             <div className="grid grid-cols-2 gap-3">
               {Object.entries(categoryLabels).map(([key, label]) => (
                 <label
                   key={key}
-                  className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-50 cursor-pointer"
+                  className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer transition-colors duration-200 ${
+                    searchPreferences.categories[key as keyof CategoryPreferences]
+                      ? 'bg-indigo-50 text-indigo-700'
+                      : 'hover:bg-gray-50'
+                  }`}
                 >
                   <input
                     type="checkbox"
@@ -124,32 +131,41 @@ export default function KeywordSearchModal({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-3 block">
-              Total items: {searchPreferences.itemsPerCategory}
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="20"
-              value={searchPreferences.itemsPerCategory}
-              onChange={(e) => setSearchPreferences(prev => ({
-                ...prev,
-                itemsPerCategory: parseInt(e.target.value)
-              }))}
-              disabled={isSearching}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>1</span>
-              <span>20</span>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-semibold text-gray-800">
+                Total Items
+              </label>
+              <div className="bg-indigo-600 text-white px-3 py-1 rounded-full text-sm font-semibold min-w-[2.5rem] text-center">
+                {searchPreferences.itemsPerCategory}
+              </div>
             </div>
-            <div className="text-xs text-gray-400 mt-1">
-              Distributed across selected categories
+
+            <div className="relative">
+              <input
+                type="range"
+                min="1"
+                max="20"
+                value={searchPreferences.itemsPerCategory}
+                onChange={(e) => setSearchPreferences(prev => ({
+                  ...prev,
+                  itemsPerCategory: parseInt(e.target.value)
+                }))}
+                disabled={isSearching}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-enhanced focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{
+                  background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${(searchPreferences.itemsPerCategory - 1) * 100 / 19}%, #e5e7eb ${(searchPreferences.itemsPerCategory - 1) * 100 / 19}%, #e5e7eb 100%)`
+                }}
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <span>1</span>
+                <span>20</span>
+              </div>
             </div>
+            <p className="text-xs text-gray-500 mt-2">Distributed across selected categories</p>
           </div>
 
 
-          <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+          <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-100">
             <button
               type="button"
               onClick={handleClose}
