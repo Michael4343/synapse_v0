@@ -9,180 +9,205 @@ const getCurrentUrl = () => typeof window !== 'undefined' ? window.location.href
 export function usePostHogTracking() {
   const posthog = usePostHog()
 
+  // Safe tracking wrapper with error handling
+  const safeTrack = useCallback((eventName: string, properties?: Record<string, any>) => {
+    try {
+      if (posthog && typeof posthog.capture === 'function') {
+        posthog.capture(eventName, properties)
+      } else {
+        console.warn('PostHog not available for tracking:', eventName)
+      }
+    } catch (error) {
+      console.error('PostHog tracking error:', error, { eventName, properties })
+    }
+  }, [posthog])
+
   // Authentication tracking - using useCallback to prevent object recreation
   const trackUserSignup = useCallback((method: 'email' | 'google' = 'email') => {
-    posthog?.capture('user_signup_attempted', {
+    safeTrack('user_signup_attempted', {
       signup_method: method,
       page_url: getCurrentUrl(),
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackUserSignupSuccess = useCallback((userId: string, method: 'email' | 'google' = 'email') => {
-    posthog?.identify(userId)
-    posthog?.capture('user_signup_completed', {
-      signup_method: method,
-      user_id: userId,
-    })
-  }, [posthog])
+    try {
+      posthog?.identify(userId)
+      safeTrack('user_signup_completed', {
+        signup_method: method,
+        user_id: userId,
+      })
+    } catch (error) {
+      console.error('PostHog identify error:', error)
+    }
+  }, [posthog, safeTrack])
 
   const trackUserLogin = useCallback((method: 'email' | 'google' = 'email') => {
-    posthog?.capture('user_login_attempted', {
+    safeTrack('user_login_attempted', {
       login_method: method,
       page_url: getCurrentUrl(),
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackUserLoginSuccess = useCallback((userId: string, method: 'email' | 'google' = 'email') => {
-    posthog?.identify(userId)
-    posthog?.capture('user_login_completed', {
-      login_method: method,
-      user_id: userId,
-    })
-  }, [posthog])
+    try {
+      posthog?.identify(userId)
+      safeTrack('user_login_completed', {
+        login_method: method,
+        user_id: userId,
+      })
+    } catch (error) {
+      console.error('PostHog identify error:', error)
+    }
+  }, [posthog, safeTrack])
 
   const trackUserLogout = useCallback(() => {
-    posthog?.capture('user_logout_completed')
-    posthog?.reset()
-  }, [posthog])
+    safeTrack('user_logout_completed')
+    try {
+      posthog?.reset()
+    } catch (error) {
+      console.error('PostHog reset error:', error)
+    }
+  }, [posthog, safeTrack])
 
   // Password reset tracking
   const trackPasswordResetRequested = useCallback((email: string) => {
-    posthog?.capture('password_reset_requested', {
+    safeTrack('password_reset_requested', {
       email_domain: email.split('@')[1] || 'unknown',
       page_url: getCurrentUrl(),
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackPasswordResetSubmitted = useCallback(() => {
-    posthog?.capture('password_reset_submitted', {
+    safeTrack('password_reset_submitted', {
       page_url: getCurrentUrl(),
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackPasswordResetCompleted = useCallback(() => {
-    posthog?.capture('password_reset_completed', {
+    safeTrack('password_reset_completed', {
       page_url: getCurrentUrl(),
     })
-  }, [posthog])
+  }, [safeTrack])
 
   // Onboarding tracking - stabilized with useCallback
   const trackOnboardingStarted = useCallback(() => {
-    posthog?.capture('onboarding_started')
-  }, [posthog])
+    safeTrack('onboarding_started')
+  }, [safeTrack])
 
   const trackUrlSubmitted = useCallback((url: string, urlType: string) => {
-    posthog?.capture('onboarding_url_submitted', {
+    safeTrack('onboarding_url_submitted', {
       submitted_url: url,
       url_type: urlType,
       url_domain: new URL(url).hostname,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackProfileGenerationStarted = useCallback(() => {
-    posthog?.capture('profile_generation_started')
-  }, [posthog])
+    safeTrack('profile_generation_started')
+  }, [safeTrack])
 
   const trackProfileGenerationCompleted = useCallback((durationMs: number, profileLength: number) => {
-    posthog?.capture('profile_generation_completed', {
+    safeTrack('profile_generation_completed', {
       generation_duration_ms: durationMs,
       profile_text_length: profileLength,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackOnboardingCompleted = useCallback(() => {
-    posthog?.capture('onboarding_completed')
-  }, [posthog])
+    safeTrack('onboarding_completed')
+  }, [safeTrack])
 
   // Dashboard tracking - stabilized with useCallback
   const trackFeedRefreshClicked = useCallback(() => {
-    posthog?.capture('feed_refresh_clicked')
-  }, [posthog])
+    safeTrack('feed_refresh_clicked')
+  }, [safeTrack])
 
   const trackFeedRefreshCompleted = useCallback((itemCount: number, categories: string[], durationMs: number) => {
-    posthog?.capture('feed_refresh_completed', {
+    safeTrack('feed_refresh_completed', {
       feed_item_count: itemCount,
       feed_categories: categories,
       generation_duration_ms: durationMs,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackFeedItemClicked = useCallback((itemId: string, itemType: string, title: string, source?: string) => {
-    posthog?.capture('feed_item_clicked', {
+    safeTrack('feed_item_clicked', {
       item_id: itemId,
       item_type: itemType,
       item_title: title,
       item_source: source,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackFeedItemExpanded = useCallback((itemId: string, itemType: string) => {
-    posthog?.capture('feed_item_expanded', {
+    safeTrack('feed_item_expanded', {
       item_id: itemId,
       item_type: itemType,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackFeedCategoryInteraction = useCallback((categoryType: string, itemCount: number) => {
-    posthog?.capture('feed_category_viewed', {
+    safeTrack('feed_category_viewed', {
       category_type: categoryType,
       category_item_count: itemCount,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   // Research-specific tracking - stabilized with useCallback
   const trackResearchDiscovery = useCallback((discoveryType: 'breakthrough_paper' | 'funding_opportunity' | 'collaboration_lead') => {
-    posthog?.capture('research_discovery_identified', {
+    safeTrack('research_discovery_identified', {
       discovery_type: discoveryType,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackContentEngagement = useCallback((engagementType: 'time_spent' | 'bookmark' | 'share', metadata?: Record<string, any>) => {
-    posthog?.capture('content_engagement', {
+    safeTrack('content_engagement', {
       engagement_type: engagementType,
       ...metadata,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   // Favourites tracking - stabilized with useCallback
   const trackItemFavourited = useCallback((itemId: string, itemType: string, itemTitle: string) => {
-    posthog?.capture('item_favourited', {
+    safeTrack('item_favourited', {
       item_id: itemId,
       item_type: itemType,
       item_title: itemTitle,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackItemUnfavourited = useCallback((itemId: string, itemType: string, itemTitle: string) => {
-    posthog?.capture('item_unfavourited', {
+    safeTrack('item_unfavourited', {
       item_id: itemId,
       item_type: itemType,
       item_title: itemTitle,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   const trackFavouritesViewed = useCallback((favouritesCount: number) => {
-    posthog?.capture('favourites_viewed', {
+    safeTrack('favourites_viewed', {
       favourites_count: favouritesCount,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   // Error tracking - stabilized to prevent excessive calls
   const trackError = useCallback((errorType: string, errorMessage: string, context?: Record<string, any>) => {
-    posthog?.capture('error_occurred', {
+    safeTrack('error_occurred', {
       error_type: errorType,
       error_message: errorMessage,
       page_url: getCurrentUrl(),
       ...context,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   // Generic event tracking - stabilized with useCallback
   const trackEvent = useCallback((eventName: string, properties?: Record<string, any>) => {
-    posthog?.capture(eventName, {
+    safeTrack(eventName, {
       page_url: getCurrentUrl(),
       ...properties,
     })
-  }, [posthog])
+  }, [safeTrack])
 
   return {
     // Authentication
