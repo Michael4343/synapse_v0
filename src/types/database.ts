@@ -1,3 +1,10 @@
+export interface CategoryPreferences {
+  publications: boolean
+  patents: boolean
+  funding_opportunities: boolean
+  trending_science_news: boolean
+}
+
 export interface Database {
   public: {
     Tables: {

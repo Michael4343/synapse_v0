@@ -254,17 +254,18 @@ export default function DashboardClient({ user, feedItems, groupedItems, childre
     setSidebarCollapsed(!sidebarCollapsed)
   }
 
-  const handleKeywordSearch = async (keywords: string) => {
+  const handleKeywordSearch = async (keywords: string, categories?: any) => {
     try {
       const startTime = Date.now()
-      const result = await keywordSearch(keywords)
+      const result = await keywordSearch(keywords, categories)
       const endTime = Date.now()
       setShowKeywordSearch(false)
 
       tracking.trackEvent('keyword_search_completed', {
         keywords: keywords,
         results_count: result.itemsGenerated || 0,
-        generation_time: endTime - startTime
+        generation_time: endTime - startTime,
+        categories_enabled: categories ? Object.values(categories).filter(Boolean).length : 4
       })
 
       // Refresh the page to show the new feed that replaces the current one

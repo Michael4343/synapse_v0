@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { usePostHogTracking } from '@/hooks/usePostHogTracking'
+import { CategoryPreferences } from '@/types/database'
 
 interface KeywordSearchModalProps {
   isOpen: boolean
   onClose: () => void
-  onSearch: (keywords: string) => void
+  onSearch: (keywords: string, categories?: CategoryPreferences) => void
   isSearching?: boolean
 }
 
@@ -18,6 +19,12 @@ export default function KeywordSearchModal({
 }: KeywordSearchModalProps) {
   const tracking = usePostHogTracking()
   const [keywords, setKeywords] = useState('')
+  const [categories, setCategories] = useState<CategoryPreferences>({
+    publications: true,
+    patents: true,
+    funding_opportunities: true,
+    trending_science_news: true
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,11 +32,19 @@ export default function KeywordSearchModal({
 
     tracking.trackEvent('keyword_search_initiated', {
       keywords: keywords.trim(),
-      keywords_length: keywords.trim().length
+      keywords_length: keywords.trim().length,
+      categories_enabled: Object.values(categories).filter(Boolean).length
     })
 
-    onSearch(keywords.trim())
+    onSearch(keywords.trim(), categories)
     setKeywords('')
+  }
+
+  const handleCategoryChange = (category: keyof CategoryPreferences) => {
+    setCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }))
   }
 
   const handleClose = () => {
@@ -37,11 +52,18 @@ export default function KeywordSearchModal({
     onClose()
   }
 
+  const categoryLabels = {
+    publications: 'Publications',
+    patents: 'Patents',
+    funding_opportunities: 'Funding',
+    trending_science_news: 'News'
+  }
+
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-4 sm:top-20 mx-auto p-4 sm:p-6 border w-full max-w-md sm:w-96 shadow-lg rounded-lg bg-white m-4 sm:m-0">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-start justify-center pt-4 sm:pt-20">
+      <div className="relative p-4 sm:p-6 border w-full max-w-md sm:w-96 shadow-lg rounded-lg bg-white mx-4">
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
             Search
@@ -68,6 +90,29 @@ export default function KeywordSearchModal({
               disabled={isSearching}
               autoFocus
             />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-3 block">
+              Include in results:
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {Object.entries(categoryLabels).map(([key, label]) => (
+                <label
+                  key={key}
+                  className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-50 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={categories[key as keyof CategoryPreferences]}
+                    onChange={() => handleCategoryChange(key as keyof CategoryPreferences)}
+                    disabled={isSearching}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                  <span className="text-sm text-gray-700">{label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3">
