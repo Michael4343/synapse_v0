@@ -19,7 +19,7 @@ async function getSiteUrl() {
   return `${protocol}://${host}`
 }
 
-export async function login(formData: FormData) {
+export async function login(formData: FormData): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
 
   const email = formData.get('email') as string
@@ -27,11 +27,11 @@ export async function login(formData: FormData) {
 
   // Basic validation
   if (!email || !password) {
-    redirect(`/?error=${encodeURIComponent('Email and password are required')}`)
+    return { success: false, error: 'Email and password are required' }
   }
 
   if (!email.includes('@')) {
-    redirect(`/?error=${encodeURIComponent('Please enter a valid email address')}`)
+    return { success: false, error: 'Please enter a valid email address' }
   }
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -49,11 +49,11 @@ export async function login(formData: FormData) {
       errorMessage = 'Please check your email and click the confirmation link before signing in.'
     }
 
-    redirect(`/?error=${encodeURIComponent(errorMessage)}`)
+    return { success: false, error: errorMessage }
   }
 
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  return { success: true }
 }
 
 export async function signup(formData: FormData): Promise<{ success: boolean; error?: string }> {

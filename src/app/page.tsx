@@ -86,7 +86,7 @@ export default function Home() {
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true)
-    // Don't clear error/message states here - let server action handle the flow
+    setError('') // Clear any previous errors
 
     if (activeTab === 'signup') {
       const password = formData.get('password') as string
@@ -128,11 +128,27 @@ export default function Home() {
       tracking.trackUserLogin('email')
 
       try {
-        // Server action will handle redirect, no need for try/catch
-        await login(formData)
-        // Track success (will happen on redirect to dashboard)
+        console.log('Starting login process...')
+        const result = await login(formData)
+        console.log('Login result:', result)
+
+        if (result.success) {
+          console.log('Login successful, redirecting to dashboard...')
+          // Track successful login
+          tracking.trackUserLogin('email')
+          // Client-side redirect to dashboard
+          router.push('/dashboard')
+        } else {
+          console.log('Login failed:', result.error)
+          // Show error message
+          setError(result.error || 'An unexpected error occurred')
+          tracking.trackError('login_failed', result.error || 'Unknown login error')
+        }
       } catch (error) {
-        tracking.trackError('login_failed', error instanceof Error ? error.message : 'Unknown login error')
+        console.error('Login error:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown login error'
+        setError(errorMessage)
+        tracking.trackError('login_failed', errorMessage)
       }
     } else if (activeTab === 'forgot') {
       // Track password reset attempt
@@ -342,7 +358,7 @@ export default function Home() {
               )}
 
               {/* Form */}
-              <form action={handleSubmit} className="space-y-5">
+              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(new FormData(e.currentTarget)); }} className="space-y-5">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     Email address
